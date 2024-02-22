@@ -9,25 +9,6 @@ const {
 } = require("../utils/validation");
 const UserModel = require("../models/userModel");
 
-
-const meetingCreate = async(req,res,next)=>{
-  try {
-
-    const {customerName,phoneNumber,scheduledDateTime} = req.body
-
-    const meeting  = await MeetingModel.create(req.body)
-
-    return res.status(201).json({
-      success: true,
-      message: "Meeting seduled successfully",
-      data : meeting
-    })
-
-  } catch (error) {
-    return next(new ErrorHandler(error.message,500))
-  }
-}
-
 const createMeeting = async (req, res, next) => {
   try {
     const { topic, meetingId, scheduledDate, startTime, endTime } = req.body;
@@ -109,12 +90,13 @@ const getAllMeeting = async (req, res, next) => {
       limit: resultPerPage,
     });
 
-    if (meetings.length == 0) {
+    if(meetings.length == 0) {
       return res.status(200).json({
         success: true,
         data: meetings,
       });
     }
+
     // Arranged The meeting according to date;
     const mapWithDate = new Map();
 
@@ -178,9 +160,6 @@ const getMeetingBySearch = async (req , res , next)=>{
     return next(new ErrorHandler(error.message , 500))
   }
 }
-
-
-
 
 const availableSlots = async (req , res , next)=>{
   try {
@@ -246,7 +225,98 @@ const teamMembers = await UserModel.findAll({
   }
 }
 
-// Get a specific meeting by ID
+
+
+
+// Create meeting
+const meetingCreate = async(req,res,next)=>{
+  try {
+
+    console.log(req.user.id)
+    const {customerName,phoneNumber,scheduledDateTime} = req.body
+
+    const meeting  = await MeetingModel.create({
+      ...req.body,
+      salePersonId:req.user.id,
+      status: "confirmed"
+    })
+
+    return res.status(201).json({
+      success: true,
+      message: "Meeting seduled successfully",
+      data : meeting
+    })
+
+  } catch (error) {
+    return next(new ErrorHandler(error.message,500))
+  }
+}
+
+// Get All meetings by salePerson
+const getAllMeetings = async (req, res, next) => {
+  try {
+
+    const meetings = await MeetingModel.findAll({
+      where: {
+        salePersonId: req.user.id,
+        status: "confirmed",
+        scheduledDateTime: {
+          [Op.gte]:
+            req.query.date ||
+            new Date().toISOString().split("T")[0] + "T00:00:00.000Z",
+        },
+      },
+    });
+
+    if (meetings.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: meetings,
+      });
+    }
+
+    // Arranged The meeting according to date;
+    const mapWithDate = new Map();
+
+    meetings.forEach((meeting) => {
+      const date = new Date(meeting.scheduledDateTime)
+        .toISOString()
+        .slice(0, 10); // Convert to 'YYYY-MM-DD' format
+
+      if (mapWithDate.has(date)) {
+        mapWithDate.get(date).push(meeting); // If the date already exists in the map, append the value to its array
+      } else {
+        mapWithDate.set(date, [meeting]); // Otherwise, create a new array with the value
+      }
+    });
+
+    const result = [];
+    for (const [time, list] of mapWithDate) {
+      result.push({
+        date: time,
+        list: list,
+      });
+    }
+
+    if (result.length > 1) {
+      result.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateA - dateB;
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
+  }
+};
+
+// Get a specific meeting by ID with assign salePerson
 const getSingleMeetingById = async (req, res) => {
   try {
 
@@ -254,14 +324,15 @@ const getSingleMeetingById = async (req, res) => {
       return next(new ErrorHandler("Missing Meeting id", 400));
     }
 
-    const meeting = await MeetingModel.findByPk(req.params.id);
+    const meeting = await MeetingModel.findOne({
+      where:{
+        id: req.params.id,
+        salePersonId: req.user.id
+      }
+    });
 
     if (!meeting) {
       return res.status(404).json({ message: "Meeting not found" });
-    }
-
-    if(meeting.teamMemberId && meeting.teamMemberId !== req.user.id){
-      return next(new ErrorHandler("You are not Authorized for this operation" , 403))
     }
 
     return res.status(200).json({
@@ -283,17 +354,18 @@ const deleteMeetingById = async (req, res) => {
       return next(new ErrorHandler("Missing Meeting Id", 400));
     }
 
-    const meeting = await MeetingModel.findByPk(req.params.id);
+    const meeting = await MeetingModel.findOne({
+      where:{
+        id:  req.params.id,
+        salePersonId: req.user.id
+      }
+    });
 
     if(!meeting) {
       return res.status(404).json({
         success: false,
         message: "Meeting not found",
       });
-    }
-
-    if(meeting.teamMemberId && meeting.teamMemberId !== req.user.id){
-      return next(new ErrorHandler("You are not Authorized for this operation" , 403))
     }
 
     await MeetingModel.destroy({
@@ -306,10 +378,11 @@ const deleteMeetingById = async (req, res) => {
       success: true,
       message: "Meeting Deleted Successfully"
     })
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 
-module.exports = { createMeeting, getAllMeeting , getSingleMeetingById , deleteMeetingById , availableSlots , meetingCreate};
+module.exports = { createMeeting, getAllMeeting , getSingleMeetingById , deleteMeetingById , availableSlots , meetingCreate , getAllMeetings};

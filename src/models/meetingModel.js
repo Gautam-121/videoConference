@@ -1,6 +1,6 @@
 const {DataTypes} = require("sequelize")
 const {sequelize} = require("../config/database.js")
-const UserModel = require("../models/userModel.js")
+const SalesUserModel = require("../models/salesUserModel.js")
 
 const MeetingModel = sequelize.define("meeting" , {
     customerName:{
@@ -31,13 +31,25 @@ const MeetingModel = sequelize.define("meeting" , {
         type:DataTypes.ENUM('pending', 'confirmed', 'completed', 'canceled'),
         allowNull:false,
         defaultValue: 'pending'
+    },
+    organizationId:{
+        type:DataTypes.STRING,
+        allowNull: false
+    },
+    salePersonId: {
+        type: DataTypes.INTEGER, // Assuming your SalesUserModel uses an auto-incrementing integer id
+        allowNull: false,
+        references: {
+            model: SalesUserModel,
+            key: 'id'
+        }
     }
 })
 
 // // Define the association
-MeetingModel.belongsTo(UserModel, {
-    foreignKey: 'teamMemberId',
-    as: 'teamMember',
+MeetingModel.belongsTo(SalesUserModel, {
+    foreignKey: 'salePersonId',
+    as: 'salepPerson',
 });
 
 module.exports = MeetingModel
