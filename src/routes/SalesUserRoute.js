@@ -1,12 +1,10 @@
 const express = require("express")
 const router = express.Router()
-const {login} = require("../controller/SalesUserController")
+const {login , register} = require("../controller/SalesUserController")
 
+router.route("/register").post(register)
 
-router.route("/login", login)
-
-
-
+router.route("/login").post(login)
 
 
 

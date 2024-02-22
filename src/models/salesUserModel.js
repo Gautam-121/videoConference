@@ -1,53 +1,68 @@
-const {DataTypes} = require("sequelize")
-const {sequelize} = require("../config/database.js")
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../config/database.js");
+const bcrypt = require("bcryptjs");
 
-const SalesUserModel = sequelize.define("sale" , {
+const SalesUserModel = sequelize.define("sale", {
     name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate:{
-            notEmpty:{
-                msg:"Name is Mandatory"
-            }
-        }
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          msg: "Name is Mandatory",
+        },
+      },
     },
     email: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate:{
-            notEmpty:{
-                msg:"Email is Mandatory"
-            }
-        }
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          msg: "Email is Mandatory",
+        },
+        isEmail: true,
+      },
     },
     password: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate:{
-            notEmpty:{
-                msg:"Password is Mandatory"
-            }
-        }
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          msg: "Password is Mandatory",
+        },
+        len: [8, 255],
+      },
     },
-    phone: { // UserId
-        type: DataTypes.STRING,
-        allowNull: false,
-        validate:{
-            notEmpty:{
-                msg:"Phone is Mandatory"
-            }
-        }
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: {
+          msg: "Phone is Mandatory",
+        },
+      },
     },
     type: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: "salePerson"
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "salePerson",
     },
-    organizationId:{
-        type:DataTypes.STRING,
-        allowNull: false
-    }
-})
+    organizationId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+  },
+  {
+    hooks: {
+      beforeCreate: async (user) => {
+        user.password = await bcrypt.hash(user.password, 10);
+      },
+    },
+  }
+);
 
-module.exports = SalesUserModel
 
+SalesUserModel.prototype.comparePassword = async function (password) {
+    return await bcrypt.compare(password, this.password);
+};
+
+module.exports = SalesUserModel;

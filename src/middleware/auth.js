@@ -1,9 +1,50 @@
 const { default: axios } = require("axios");
 const ErrorHandler = require("../utils/errorHandler");
 const jwt = require("jsonwebtoken");
+const SalesUserModel = require("../models/salesUserModel")
 
 
 const isAuthenticatedUser = async (req, res, next) => {
+  try {
+    const { token } = req.cookies;
+
+    if (!token) {
+      return next(
+        new ErrorHandler("Please Login to access this resource", 401)
+      );
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decodedToken) => {
+      if (err) {
+        let message = (err.message = "jwt expiry"
+          ? "token is expired , please login again"
+          : "invalid token");
+        return next(new ErrorHandler(message, 401));
+      }
+
+      req.user = await SalesUserModel.findByPk(decodedToken.id);
+      next();
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
+  }
+};
+
+const authorizeRoles = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.isAdmin)) {
+            return next(
+                new ErrorHandler(
+                    `Role: ${req.user.isAdmin} is not allowed to access this resouce `,
+                    403
+                )
+            );
+        }
+        next();
+    };
+};
+
+const isAuthenticatedUsers = async (req, res, next) => {
     try {
         const { token } = req.cookies;
 
@@ -36,20 +77,6 @@ const isAuthenticatedUser = async (req, res, next) => {
     } catch (error) {
         return next(new ErrorHandler(error.message, 500));
     }
-};
-
-const authorizeRoles = (...roles) => {
-    return (req, res, next) => {
-        if (!roles.includes(req.user.isAdmin)) {
-            return next(
-                new ErrorHandler(
-                    `Role: ${req.user.isAdmin} is not allowed to access this resouce `,
-                    403
-                )
-            );
-        }
-        next();
-    };
 };
 
 module.exports = {isAuthenticatedUser , authorizeRoles}

@@ -3,10 +3,13 @@ const app = express()
 const cors = require("cors")
 const {connection} = require("./config/database.js")
 const errorMiddleware = require("./middleware/error.js")
-const dotenv = require("dotenv").config()
+require("dotenv").config()
+const cookieParser = require("cookie-parser");
 
 app.use(express.json())
 app.use(cors())
+app.use(cookieParser());
+
 
 // Connecting To Database
 connection()
@@ -32,7 +35,7 @@ process.on("uncaughtException" , (err)=>{
 //Middleware for error
 app.use(errorMiddleware)
 
-const server = app.listen(process.env.PORT || 8081 , ()=>{
+const server = app.listen(process.env.PORT || 3000 , ()=>{
     console.log(`Server running on Port ${process.env.PORT || 8081}`)
 })
 

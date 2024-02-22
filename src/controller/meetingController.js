@@ -89,7 +89,7 @@ const getAllMeeting = async (req, res, next) => {
       },
     };
 
-    if (req.query.startDate && req.query.endDate) {
+    if(req.query.startDate && req.query.endDate) {
       filterMeetings.where.scheduledDate = {
         [Op.between]: [
           req.query.startDate + "T00:00:00.000Z",
@@ -171,53 +171,16 @@ const getAllMeeting = async (req, res, next) => {
   }
 };
 
-// Get a specific meeting by ID
-const getSingleMeetingById = async (req, res) => {
+const getMeetingBySearch = async (req , res , next)=>{
   try {
-    if (!req.params.id) {
-      return next(new ErrorHandler("Missing Meeting id",400))
-    }
-    const meeting = await MeetingModel.findByPk(req.params.id);
-    if (!meeting) {
-      return res.status(404).json({ message: "Meeting not found" });
-    }
-    return res.status(200).json({
-      success: true,
-      data: meeting
-    })
+    
   } catch (error) {
-    return next(new ErrorHandler(error.message,500))
+    return next(new ErrorHandler(error.message , 500))
   }
-};
+}
 
-// Delete a meeting
-const deleteMeetingById = async (req, res) => {
-  try {
 
-    if (!req.params.id) {
-      return next(new ErrorHandler("Missing Meeting Id", 400));
-    }
 
-    const meeting = await MeetingModel.findByPk(req.params.id);
-
-    if (!meeting) {
-      return res.status(404).json({
-        success: false,
-        message: "Meeting not found",
-      });
-    }
-
-    await MeetingModel.destroy({
-      where: {
-        id: req.params.id
-      }
-    })
-
-    return res.status(20)
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
 const availableSlots = async (req , res , next)=>{
   try {
@@ -282,6 +245,71 @@ const teamMembers = await UserModel.findAll({
     res.status(500).json({ message: error.message });
   }
 }
+
+// Get a specific meeting by ID
+const getSingleMeetingById = async (req, res) => {
+  try {
+
+    if (!req.params.id) {
+      return next(new ErrorHandler("Missing Meeting id", 400));
+    }
+
+    const meeting = await MeetingModel.findByPk(req.params.id);
+
+    if (!meeting) {
+      return res.status(404).json({ message: "Meeting not found" });
+    }
+
+    if(meeting.teamMemberId && meeting.teamMemberId !== req.user.id){
+      return next(new ErrorHandler("You are not Authorized for this operation" , 403))
+    }
+
+    return res.status(200).json({
+      success: true,
+      message:"Data send Successfully",
+      data: meeting
+    })
+
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
+  }
+};
+
+// Delete a meeting
+const deleteMeetingById = async (req, res) => {
+  try {
+
+    if (!req.params.id) {
+      return next(new ErrorHandler("Missing Meeting Id", 400));
+    }
+
+    const meeting = await MeetingModel.findByPk(req.params.id);
+
+    if(!meeting) {
+      return res.status(404).json({
+        success: false,
+        message: "Meeting not found",
+      });
+    }
+
+    if(meeting.teamMemberId && meeting.teamMemberId !== req.user.id){
+      return next(new ErrorHandler("You are not Authorized for this operation" , 403))
+    }
+
+    await MeetingModel.destroy({
+      where: {
+        id: req.params.id
+      }
+    })
+
+    return res.status(200).json({
+      success: true,
+      message: "Meeting Deleted Successfully"
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 module.exports = { createMeeting, getAllMeeting , getSingleMeetingById , deleteMeetingById , availableSlots , meetingCreate};
