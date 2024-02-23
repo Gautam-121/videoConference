@@ -37,12 +37,12 @@ const MeetingModel = sequelize.define("meeting" , {
         type:DataTypes.DATE,
         allowNull:false
     },
-    startDate:{
-        type:DataTypes.TIME,
+    start:{
+        type:DataTypes.DATE,
         allowNull:false
     },
-    endDate:{
-        type:DataTypes.TIME,
+    end:{
+        type:DataTypes.DATE,
         allowNull: false
     },
     status:{

@@ -311,12 +311,19 @@ const getAllMeetings = async (req, res, next) => {
 
     const meetings = await MeetingModel.findAll(meetingSearchQuery);
 
-    if (meetings.length === 0) {
-      return res.status(200).json({
-        success: true,
-        data: meetings,
+    if (meetings.length > 1) {
+      meetings.sort((a, b) => {
+        const dateA = new Date(a.seduledDate);
+        const dateB = new Date(b.seduledDate);
+        return dateA - dateB;
       });
     }
+
+    return res.status(200).json({
+      success: true,
+      message: "Data send Successfully",
+      data: meetings
+    })
 
     // Arranged The meeting according to date;
     const mapWithDate = new Map();
