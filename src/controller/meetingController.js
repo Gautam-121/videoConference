@@ -8,6 +8,8 @@ const {
   isEndTimeGreaterThanStart,
 } = require("../utils/validation");
 const UserModel = require("../models/userModel");
+const moment = require('moment-timezone');
+
 
 const createMeeting = async (req, res, next) => {
   try {
@@ -305,7 +307,7 @@ const getAllMeetings = async (req, res, next) => {
 
     if(req.query?.date){
       meetingSearchQuery.where.seduledDate = {
-        [Op.eq]: req.query.date 
+        [Op.eq]: moment.tz(req.query.date, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
       }
     }
 
