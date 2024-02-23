@@ -234,7 +234,12 @@ const teamMembers = await UserModel.findAll({
 const meetingCreate = async(req,res,next)=>{
   try {
 
-    const meeting  = await MeetingModel.create(req.body)
+    const meeting  = await MeetingModel.create({
+      ...req.body,
+      seduledDate:moment.tz(req.body.seduledDate, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+      start:moment.tz(req.body.start, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+      end:moment.tz(req.body.end, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
+    })
 
     return res.status(201).json({
       success: true,

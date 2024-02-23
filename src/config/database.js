@@ -8,9 +8,6 @@ const sequelize = new Sequelize({
     username: process.env.User,
     password:  process.env.Password,
     database: process.env.Database,
-    dialectOptions: {
-      timezone: 'Asia/Kolkata',
-    },
 });
 
 const connection = () => {
