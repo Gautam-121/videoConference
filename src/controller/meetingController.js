@@ -245,6 +245,10 @@ const meetingCreate = async(req,res,next)=>{
   }
 }
 
+const getVideoRequest = async(req,res,next)=>{
+
+}
+
 // Update meeting by salePerson
 const updateMeeting = async(req,res,next)=>{
   try {
@@ -292,17 +296,20 @@ const updateMeeting = async(req,res,next)=>{
 const getAllMeetings = async (req, res, next) => {
   try {
 
-    const meetings = await MeetingModel.findAll({
+    const meetingSearchQuery = {
       where: {
         salePersonId: req.user.id,
         status: "confirmed",
-        seduledDate: {
-          [Op.gte]:
-            req.query.date ||
-            new Date().toISOString().split("T")[0] + "T00:00:00.000Z",
-        },
       },
-    });
+    }
+
+    if(req.query?.date){
+      meetingSearchQuery.where.seduledDate = {
+        [Op.eq]: req.query.date 
+      }
+    }
+
+    const meetings = await MeetingModel.findAll(meetingSearchQuery);
 
     if (meetings.length === 0) {
       return res.status(200).json({
