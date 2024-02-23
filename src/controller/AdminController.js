@@ -7,7 +7,7 @@ const registerSalesUser = async (req, res, next) => {
     const { name, email, password, phone} = req.body;
 
     if(!name || !email || password || phone){
-       return next(new ErrorHandler("Please provide all necessary field" , 400)) 
+       return next(new ErrorHandler("Please provide all necessary fielda" , 400)) 
     }
 
     const user = await SalesUserModel.create({

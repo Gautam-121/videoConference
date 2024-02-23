@@ -228,23 +228,59 @@ const teamMembers = await UserModel.findAll({
 
 
 
-// Create meeting
+// Customer request for video call
 const meetingCreate = async(req,res,next)=>{
   try {
 
-    console.log(req.user.id)
-    const {customerName,phoneNumber,scheduledDateTime} = req.body
-
-    const meeting  = await MeetingModel.create({
-      ...req.body,
-      salePersonId:req.user.id,
-      status: "confirmed"
-    })
+    const meeting  = await MeetingModel.create(req.body)
 
     return res.status(201).json({
       success: true,
       message: "Meeting seduled successfully",
       data : meeting
+    })
+
+  } catch (error) {
+    return next(new ErrorHandler(error.message,500))
+  }
+}
+
+// Update meeting by salePerson
+const updateMeeting = async(req,res,next)=>{
+  try {
+
+    if(!req.params.id){
+      return next(new ErrorHandler("missing meeting id", 400))
+    }
+
+    let meeting = await MeetingModel.findByPk(req.params.id)
+
+    if(!meeting){
+      return next(new ErrorHandler("Meeting not found",404))
+    }
+
+    if(meeting.salePersonId && meeting.salePersonId !== req.user.id){
+      return next(new ErrorHandler("You are not authorized person for this resource",403))
+    }
+    
+    const [,updateMeeting]  = await MeetingModel.update({ 
+      ...req.body, 
+        salePersonId:req.user.id , 
+        status: "confirmed"  
+      },
+      {
+        where: { 
+          id: req.params.id
+        },
+        returning: true, // This option ensures that the updated data is returned
+        plain: true // This option ensures that the returned data is a plain object
+      }
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: "Meeting Updated successfully",
+      data : updateMeeting
     })
 
   } catch (error) {
@@ -260,7 +296,7 @@ const getAllMeetings = async (req, res, next) => {
       where: {
         salePersonId: req.user.id,
         status: "confirmed",
-        scheduledDateTime: {
+        seduledDate: {
           [Op.gte]:
             req.query.date ||
             new Date().toISOString().split("T")[0] + "T00:00:00.000Z",
@@ -279,7 +315,7 @@ const getAllMeetings = async (req, res, next) => {
     const mapWithDate = new Map();
 
     meetings.forEach((meeting) => {
-      const date = new Date(meeting.scheduledDateTime)
+      const date = new Date(meeting.seduledDate)
         .toISOString()
         .slice(0, 10); // Convert to 'YYYY-MM-DD' format
 
@@ -317,7 +353,7 @@ const getAllMeetings = async (req, res, next) => {
 };
 
 // Get a specific meeting by ID with assign salePerson
-const getSingleMeetingById = async (req, res) => {
+const getSingleMeetingById = async (req, res , next) => {
   try {
 
     if (!req.params.id) {
@@ -332,7 +368,7 @@ const getSingleMeetingById = async (req, res) => {
     });
 
     if (!meeting) {
-      return res.status(404).json({ message: "Meeting not found" });
+      return next(new ErrorHandler("Meeting not found",400))
     }
 
     return res.status(200).json({
@@ -385,4 +421,4 @@ const deleteMeetingById = async (req, res) => {
 };
 
 
-module.exports = { createMeeting, getAllMeeting , getSingleMeetingById , deleteMeetingById , availableSlots , meetingCreate , getAllMeetings};
+module.exports = {meetingCreate , updateMeeting , getAllMeetings , getSingleMeetingById , deleteMeetingById };

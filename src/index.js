@@ -16,14 +16,10 @@ connection()
 
 // Routes Imports
 const meetingRouter = require("./routes/meetingRoute.js")
-const adminRouter = require("./routes/AdminRoute.js")
 const saleUserRouter = require("./routes/SalesUserRoute.js")
-const userRouter = require("./routes/UserRoutes.js")
 
 app.use("/api/v1", meetingRouter)
-app.use("/api/v1", adminRouter)
 app.use("/api/v1", saleUserRouter)
-app.use("/api/v1", userRouter)
 
 // Handling Uncaught Exceprtion Error
 process.on("uncaughtException" , (err)=>{

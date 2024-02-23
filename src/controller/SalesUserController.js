@@ -8,7 +8,7 @@ const register = async (req, res, next) => {
     const { name, email, password, phone , organizationId} = req.body;
 
     if(!name || !email || !password || !phone || !organizationId){
-       return next(new ErrorHandler("Please provide all necessary field" , 400)) 
+       return next(new ErrorHandler("Please provide all necessary fields" , 400)) 
     }
 
     // Write code for Validate the Phone Number
@@ -57,6 +57,18 @@ const login = async (req , res , next)=>{
     }
 }
 
+const logOut = async (req , res , next)=>{
+    res.cookie("token", null, {
+        expires: new Date(Date.now()),
+        httpOnly: true,
+    });
+    
+      return res.status(200).json({
+        success: true,
+        message: "Logged Out",
+      });
+}
+
 const logins = async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -103,4 +115,4 @@ const logins = async (req, res, next) => {
 
 
 
-module.exports = {register , login}
+module.exports = {register , login , logOut}

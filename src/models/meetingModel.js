@@ -3,13 +3,28 @@ const {sequelize} = require("../config/database.js")
 const SalesUserModel = require("../models/salesUserModel.js")
 
 const MeetingModel = sequelize.define("meeting" , {
-    customerName:{
+    name:{
         type:DataTypes.STRING,
-        allowNull:false
+        allowNull:false,
+        validate:{
+            notEmpty:{
+                msg:"Name is Mandatory"
+            }
+        }
     },
-    phoneNumber:{
+    email:{
         type:DataTypes.STRING,
-        allowNull:false
+        allowNull:false,
+        validate:{
+            notEmpty:{
+                msg:"Email is Mandatory"
+            },
+            isEmail: true
+        }
+    },
+    phone:{
+        type:DataTypes.STRING,
+        allowNull: false
     },
     videoCallLink:{
         type:DataTypes.STRING,
@@ -18,14 +33,17 @@ const MeetingModel = sequelize.define("meeting" , {
         type: DataTypes.STRING,
         unique: true,
     },
-    scheduledDateTime: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        validate:{
-            notEmpty:{
-                msg:"Seduling Date is Mandatory"
-            }
-        }
+    seduledDate:{
+        type:DataTypes.DATE,
+        allowNull:false
+    },
+    startDate:{
+        type:DataTypes.TIME,
+        allowNull:false
+    },
+    endDate:{
+        type:DataTypes.TIME,
+        allowNull: false
     },
     status:{
         type:DataTypes.ENUM('pending', 'confirmed', 'completed', 'canceled'),
@@ -35,14 +53,6 @@ const MeetingModel = sequelize.define("meeting" , {
     organizationId:{
         type:DataTypes.STRING,
         allowNull: false
-    },
-    salePersonId: {
-        type: DataTypes.INTEGER, // Assuming your SalesUserModel uses an auto-incrementing integer id
-        allowNull: false,
-        references: {
-            model: SalesUserModel,
-            key: 'id'
-        }
     }
 })
 

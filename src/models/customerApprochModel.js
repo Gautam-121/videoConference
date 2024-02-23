@@ -1,7 +1,7 @@
 const {DataTypes} = require("sequelize")
 const {sequelize} = require("../config/database")
 
-const customerModel = new sequelize.define("customer",{
+const CustomerModel = sequelize.define("customer", {
     name:{
         type:DataTypes.STRING,
         allowNull:false,
@@ -18,12 +18,19 @@ const customerModel = new sequelize.define("customer",{
             notEmpty:{
                 msg:"Email is Mandatory"
             },
-            isEmail
+            isEmail: true
         }
     },
     phone:{
         type:DataTypes.STRING,
         allowNull: false
+    },
+    videoCallLink:{
+        type:DataTypes.STRING,
+    },
+    meetingId: {
+        type: DataTypes.STRING,
+        unique: true,
     },
     seduledDate:{
         type:DataTypes.DATE,
@@ -37,10 +44,19 @@ const customerModel = new sequelize.define("customer",{
         type:DataTypes.TIME,
         allowNull: false
     },
+    status:{
+        type:DataTypes.ENUM('pending', 'confirmed', 'completed', 'canceled'),
+        allowNull:false,
+        defaultValue: 'pending'
+    },
+    organizationId:{
+        type:DataTypes.STRING,
+        allowNull: false
+    },
     isDeleted:{
         type:DataTypes.BOOLEAN,
         defaultValue:false
     }
 })
 
-module.exports = customerModel
+module.exports = CustomerModel
