@@ -8,6 +8,8 @@ const isAuthenticatedUser = async (req, res, next) => {
   try {
     const { token } = req.cookies;
 
+    console.log("Token is " , token)
+
     if (!token) {
       return next(
         new ErrorHandler("Please Login to access this resource", 401)

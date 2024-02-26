@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const {isAuthenticatedUser} = require("../middleware/auth")
-const {meetingCreate , getSingleMeetingById , deleteMeetingById , getAllMeetings , updateMeeting} = require("../controller/meetingController")
+const {meetingCreate , getSingleMeetingById , deleteMeetingById , getAllMeetings , updateMeeting ,getMeetingRequest} = require("../controller/meetingController")
 
 
 router.route("/meeting").post(meetingCreate)
@@ -15,6 +15,8 @@ router.route("/meeting/me/:id").get(isAuthenticatedUser , getSingleMeetingById)
 router.route("/meeting/update/:id").put(isAuthenticatedUser , updateMeeting)
 
 router.route("/meeting/me/:id").delete(isAuthenticatedUser , deleteMeetingById)
+
+router.route("/meeting/getMeetingRequest").get(getMeetingRequest)
 
 
 // router.route("/meetings/availableSlot/:date").get(availableSlots)

@@ -252,8 +252,24 @@ const meetingCreate = async(req,res,next)=>{
   }
 }
 
-const getVideoRequest = async(req,res,next)=>{
+const getMeetingRequest = async(req,res,next)=>{
+  try {
 
+    const meeting = await MeetingModel.findAll({
+      where:{
+        start:moment.tz('Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+      }
+    })
+
+    return res.status(200).json({
+      success: true,
+      message: "Data fetch Successfully",
+      data: meeting
+    })
+    
+  } catch (error) {
+    return next(new ErrorHandler(error.message , 500))
+  }
 }
 
 // Update meeting by salePerson
@@ -325,6 +341,8 @@ const getAllMeetings = async (req, res, next) => {
         return dateA - dateB;
       });
     }
+
+    console.log(meetings)
 
     return res.status(200).json({
       success: true,
@@ -442,4 +460,4 @@ const deleteMeetingById = async (req, res) => {
 };
 
 
-module.exports = {meetingCreate , updateMeeting , getAllMeetings , getSingleMeetingById , deleteMeetingById };
+module.exports = {meetingCreate , updateMeeting , getAllMeetings , getSingleMeetingById , deleteMeetingById , getMeetingRequest };
