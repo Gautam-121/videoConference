@@ -342,8 +342,6 @@ const getAllMeetings = async (req, res, next) => {
       });
     }
 
-    console.log(meetings)
-
     return res.status(200).json({
       success: true,
       message: "Data send Successfully",

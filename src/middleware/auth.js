@@ -7,8 +7,10 @@ const SalesUserModel = require("../models/salesUserModel")
 const isAuthenticatedUser = async (req, res, next) => {
   try {
     const { token } = req.cookies;
+    console.log(req.headers.cookie)
 
     console.log("Token is" , token)
+    console.log("cookies" , req.cookies)
 
     if (!token) {
       return next(
