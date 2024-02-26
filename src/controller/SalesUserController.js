@@ -50,7 +50,7 @@ const login = async (req , res , next)=>{
         if (!isPasswordMatched) {
             return next(new ErrorHandler("Invalid email or password", 401));
         }
-
+        
         sendToken(user, 200, res);
     } catch (error) {
         return next(new ErrorHandler(error.message , 500))

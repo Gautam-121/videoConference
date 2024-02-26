@@ -7,11 +7,17 @@ require("dotenv").config()
 const cookieParser = require("cookie-parser");
 
 app.use(express.json())
-app.use(cors())
+app.use(cors(
+    {
+    "origin": "http://localhost:3000",
+    credentials: true
+    }
+))
+
+
 app.use(cookieParser());
 
-
-// Connecting To Database
+//Connecting To Database
 connection()
 
 // Routes Imports
@@ -44,5 +50,7 @@ process.on("unhandledRejection" , (err)=>{
         process.exit(1)
     })
 })
+
+
 
 
