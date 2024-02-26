@@ -8,7 +8,7 @@ const isAuthenticatedUser = async (req, res, next) => {
   try {
     const { token } = req.cookies;
 
-    console.log("Token is " , token)
+    console.log("Token is" , token)
 
     if (!token) {
       return next(

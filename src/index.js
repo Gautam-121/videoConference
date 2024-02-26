@@ -9,8 +9,8 @@ const cookieParser = require("cookie-parser");
 app.use(express.json())
 app.use(cors(
     {
-    "origin": "http://localhost:3000",
-    credentials: true
+     "origin": "http://localhost:3000",
+     credentials: true
     }
 ))
 
@@ -24,8 +24,8 @@ connection()
 const meetingRouter = require("./routes/meetingRoute.js")
 const saleUserRouter = require("./routes/SalesUserRoute.js")
 
-app.use("/api/v1", meetingRouter)
-app.use("/api/v1", saleUserRouter)
+app.use("/", meetingRouter)
+app.use("/", saleUserRouter)
 
 // Handling Uncaught Exceprtion Error
 process.on("uncaughtException" , (err)=>{
