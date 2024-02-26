@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 
 const sendToken = (user, statusCode, res) => {
 
-    
+    console.log(process.env.NODE_ENV)
   const token = jwt.sign({ id: user.id, isAdmin: user.type },process.env.JWT_SECRET,{
       expiresIn: process.env.JWT_EXPIRE,
     });
@@ -14,7 +14,8 @@ const sendToken = (user, statusCode, res) => {
       Date.now() + process.env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000
     ),
     httpOnly: true,
-    sameSite: "lax"
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production"
   };
   
   return res.status(statusCode).cookie("token", token, options).json({
