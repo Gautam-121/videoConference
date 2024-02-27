@@ -252,25 +252,71 @@ const meetingCreate = async(req,res,next)=>{
   }
 }
 
+// Get meeting Request by customer
 const getMeetingRequest = async(req,res,next)=>{
   try {
 
-    const meeting = await MeetingModel.findAll({
+    let meetings = await MeetingModel.findAll({
       where:{
-        start:moment.tz('Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+        start:{
+          [Op.gte] : moment.tz('Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
+        },
+        status: "pending"
       }
     })
+
+    if(meetings.length==0){
+      return res.status(200).json({
+        success: true,
+        data: meetings
+      })
+    }
+
+    let uniqueStartTimes = new Map()
+
+    meetings.forEach(meet => {
+      uniqueStartTimes.set(meet.start.toISOString(), meet)
+    })
+
+    let uniqueMeetings = Array.from(uniqueStartTimes.values())
 
     return res.status(200).json({
       success: true,
       message: "Data fetch Successfully",
-      data: meeting
+      data: uniqueMeetings
     })
     
   } catch (error) {
     return next(new ErrorHandler(error.message , 500))
   }
 }
+
+const getLiveMeetingCall = async (req, res, next) => {
+  try {
+
+    const currentTime = moment.tz('Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
+
+    const liveCalls = await MeetingModel.findAll({
+      where: {
+        start: {
+          [Op.lte]: currentTime
+        },
+        end: {
+          [Op.gte]: currentTime
+        }
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Data send successfully"
+    })
+  } catch (error) {
+    next(new ErrorHandler(error.message, 500));
+  }
+}
+
+
 
 // Update meeting by salePerson
 const updateMeeting = async(req,res,next)=>{

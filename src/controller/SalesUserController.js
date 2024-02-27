@@ -33,6 +33,7 @@ const register = async (req, res, next) => {
 
 const login = async (req , res , next)=>{
     try {
+
         const { email, password } = req.body;
 
         if (!email || !password) {
@@ -58,6 +59,7 @@ const login = async (req , res , next)=>{
 }
 
 const logOut = async (req , res , next)=>{
+    
     res.cookie("token", null, {
         expires: new Date(Date.now()),
         httpOnly: true,

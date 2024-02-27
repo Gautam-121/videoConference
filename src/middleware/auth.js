@@ -5,27 +5,25 @@ const SalesUserModel = require("../models/salesUserModel")
 
 
 const isAuthenticatedUser = async (req, res, next) => {
+
   try {
-    const { token } = req.cookies;
-    console.log(req.headers.cookie)
 
-    console.log("Token is" , token)
-    console.log("cookies" , req.cookies)
+    let token = req.headers["authorization"]
+    token = token.split(" ")[1]
 
-    if (!token) {
+    if (token=="null") {
       return next(
         new ErrorHandler("Please Login to access this resource", 401)
       );
     }
-
+    
     jwt.verify(token, process.env.JWT_SECRET, async (err, decodedToken) => {
-      if (err) {
+      if (err) { 
         let message = (err.message = "jwt expiry"
           ? "token is expired , please login again"
           : "invalid token");
         return next(new ErrorHandler(message, 401));
       }
-
       req.user = await SalesUserModel.findByPk(decodedToken.id);
       next();
     });

@@ -2,23 +2,11 @@ const jwt = require("jsonwebtoken");
 
 const sendToken = (user, statusCode, res) => {
 
-    console.log(process.env.NODE_ENV)
   const token = jwt.sign({ id: user.id, isAdmin: user.type },process.env.JWT_SECRET,{
-      expiresIn: process.env.JWT_EXPIRE,
-    });
-
-  // options for cookie
-  const options = {
-    path: "/",
-    expires: new Date(
-      Date.now() + process.env.COOKIE_EXPIRE * 24 * 60 * 60 * 1000
-    ),
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production"
-  };
+      expiresIn: process.env.JWT_EXPIRE
+  });
   
-  return res.status(statusCode).cookie("token", token, options).json({
+  return res.status(statusCode).json({
     success: true,
     data:user,
     token,
