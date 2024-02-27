@@ -320,15 +320,17 @@ const getLiveMeetingCall = async (req, res, next) => {
 
 const getUpcomingMeetingCall = async (req, res, next) => {
   try {
-
     const currentTime = moment.tz('Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
 
     const upcomingCalls = await MeetingModel.findAll({
       where: {
+        salePersonId: req.user.id,
         start: {
           [Op.gt]: currentTime
         }
-      }
+      },
+      order: [['start', 'ASC']], // Sort by start time in ascending order
+      limit: 1 // Limit the number of results to 1
     });
 
     res.json({ success: true, data: upcomingCalls });
@@ -336,6 +338,7 @@ const getUpcomingMeetingCall = async (req, res, next) => {
     next(new ErrorHandler(error.message, 500));
   }
 }
+
 
 // Update meeting by salePerson
 const updateMeeting = async(req,res,next)=>{
