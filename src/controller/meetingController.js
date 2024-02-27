@@ -296,8 +296,9 @@ const getLiveMeetingCall = async (req, res, next) => {
 
     const currentTime = moment.tz('Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
 
-    const liveCalls = await MeetingModel.findAll({
+    const liveCalls = await MeetingModel.findOne({
       where: {
+        salePersonId: req.user.id,
         start: {
           [Op.lte]: currentTime
         },
@@ -309,14 +310,32 @@ const getLiveMeetingCall = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: "Data send successfully"
+      message: "Data send successfully",
+      data: liveCalls
     })
   } catch (error) {
     next(new ErrorHandler(error.message, 500));
   }
 }
 
+const getUpcomingMeetingCall = async (req, res, next) => {
+  try {
 
+    const currentTime = moment.tz('Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
+
+    const upcomingCalls = await MeetingModel.findAll({
+      where: {
+        start: {
+          [Op.gt]: currentTime
+        }
+      }
+    });
+
+    res.json({ success: true, data: upcomingCalls });
+  } catch (error) {
+    next(new ErrorHandler(error.message, 500));
+  }
+}
 
 // Update meeting by salePerson
 const updateMeeting = async(req,res,next)=>{
@@ -504,4 +523,4 @@ const deleteMeetingById = async (req, res) => {
 };
 
 
-module.exports = {meetingCreate , updateMeeting , getAllMeetings , getSingleMeetingById , deleteMeetingById , getMeetingRequest };
+module.exports = {meetingCreate , updateMeeting , getAllMeetings , getSingleMeetingById , deleteMeetingById , getMeetingRequest, getLiveMeetingCall , getUpcomingMeetingCall};
