@@ -10,6 +10,7 @@ const {
   getMeetingRequest,
   getLiveMeetingCall,
   getUpcomingMeetingCall,
+  availableSlotsForSalePerson
 } = require("../controller/meetingController");
 
 router.route("/meeting").post(meetingCreate);
@@ -29,6 +30,9 @@ router.route("/meeting/getMeetingRequest").get(getMeetingRequest);
 router.route("/meeting/liveCall").get(isAuthenticatedUser, getLiveMeetingCall);
 
 router.route("/meeting/upcomingCall").get(isAuthenticatedUser, getUpcomingMeetingCall);
+
+router.route("/meeting/availableSlot/saleperson/:date").get(isAuthenticatedUser, availableSlotsForSalePerson);
+
 
 // router.route("/meetings/availableSlot/:date").get(availableSlots)
 

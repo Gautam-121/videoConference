@@ -53,6 +53,7 @@ const login = async (req , res , next)=>{
         }
         
         sendToken(user, 200, res);
+        
     } catch (error) {
         return next(new ErrorHandler(error.message , 500))
     }

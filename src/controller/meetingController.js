@@ -3,9 +3,11 @@ const { Op } = require("sequelize");
 const ErrorHandler = require("../utils/errorHandler");
 const ApiFeatures = require("../utils/apiFeatures");
 const {
-  isValidDate,
-  isTimeGreaterThanCurrent,
-  isEndTimeGreaterThanStart,
+  isDateGreterThanToday,
+  isValidEmail,
+  isValidEndTime,
+  isValidPhone,
+  isValidStartTime
 } = require("../utils/validation");
 const UserModel = require("../models/userModel");
 const moment = require('moment-timezone');
@@ -219,20 +221,139 @@ const teamMembers = await UserModel.findAll({
       currentSlot = new Date(currentSlot.getTime() + 30 * 60 * 1000); // Increment by 30 minutes
     }
 
-
-    
     res.json(availableSlots);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 }
 
+const availableSlotsForSalePerson = async (req , res , next)=>{
+  try {
+
+    if (!req.params.date) {
+      return next(new ErrorHandler("Date is missing", 400));
+    }
+
+    // Get the date from the request parameters
+    const date = req.params.date;
+
+    console.log("date" , date)
+    moment.tz(req.query.date, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
+
+    // Define the start and end times for the given date
+    const startTime = moment.tz(date, 'Asia/Kolkata').set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
+    const endTime = moment.tz(date, 'Asia/Kolkata').set({ hour: 18, minute: 0, second: 0, millisecond: 0 }).utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
 
 
+
+
+    console.log("startTime" , startTime , "  " , endTime)
+
+    // Get all meetings for the salesperson that are happening after the current time
+    const meetings = await MeetingModel.findAll({
+      where: {
+        salePersonId: req.user.id,
+        start: {
+          [Op.gte]: startTime,
+          [Op.lt]: endTime
+        }
+      },
+      order: [['start', 'ASC']] // Sort by start time in ascending order
+    });
+
+    // Create an array to store the available slots
+    const availableSlots = [];
+
+    // Initialize the start time as the start of the day
+    let currentTime = moment(startTime)
+
+    while (currentTime.isBefore(endTime)) {
+      const meetingAtSlot = meetings.find(meeting => moment(meeting.start).isSame(currentTime));
+      if (!meetingAtSlot) {
+        availableSlots.push(currentTime.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'));
+      }
+       // Move to the next hour
+       currentTime.add(30, 'minutes');
+    }
+
+    // // Iterate through the meetings
+    // meetings.forEach((meeting, index) => {
+
+    //   // Calculate the end time of the meeting
+    //   const endTime = moment(meeting.start);
+
+    //   // If there's a gap between the current time and the meeting
+    //   if (currentTime.isBefore(endTime)) {
+    //     // Add the available slot to the list
+    //     availableSlots.push({
+    //       start: currentTime.toISOString(),
+    //       end: endTime.toISOString()
+    //     });
+    //   }
+
+    //   // Update the current time to the end time of the meeting
+    //   currentTime = moment(meeting.end);
+    // });
+
+    // // If there's a gap between the last meeting and the end of the day
+    // if (currentTime.isBefore(endTime)) {
+    //   // Add the available slot to the list
+    //   availableSlots.push({
+    //     start: currentTime.toISOString(),
+    //     end: endTime.toISOString()
+    //   });
+    // }
+
+    return res.status(200).json({
+      success: true,
+      data: availableSlots
+    });
+
+  } catch (error) {
+    return next(new ErrorHandler(error.message , 400))
+  }
+}
 
 // Customer request for video call
 const meetingCreate = async(req,res,next)=>{
   try {
+
+    const {name ,email , phone , seduledDate , start , end , organizationId} = req.body
+
+    if(!name || !email || !phone || !seduledDate || !start || !end || !organizationId){
+      return next(new ErrorHandler("Provide all neccessary field" , 400))
+    }
+
+    if(!isValidEmail(email)){
+      return next(new ErrorHandler("Invalid Email id" , 400))
+    }
+
+    if(!isValidPhone(phone)){
+      return next(new ErrorHandler("Invalid Phone Number" , 400))
+    }
+
+    if(!isDateGreterThanToday(seduledDate)){
+      return next(new ErrorHandler("Seduled date not less than today's date",400))
+    }
+
+    if(!isValidStartTime(start)){
+      return next(new ErrorHandler("Startime of meeting should be greater than current time",400))
+    }
+
+    if(!isValidEndTime(start , end)){
+      return next(new ErrorHandler("endTime of meeting should not be less than startTime of meeting",400))
+    }
+
+    const isExist =  await MeetingModel.findOne({
+      where:{
+        email:email,
+        seduledDate:moment.tz(seduledDate, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
+      }
+    })
+
+    if(isExist){
+      return next(new ErrorHandler(`You have already send a video call Request on ${seduledDate} , Please select another day for seduling video call meeting` , 400))
+    }
 
     const meeting  = await MeetingModel.create({
       ...req.body,
@@ -252,15 +373,12 @@ const meetingCreate = async(req,res,next)=>{
   }
 }
 
-// Get meeting Request by customer
+// Get meeting Requested by customer
 const getMeetingRequest = async(req,res,next)=>{
   try {
 
     let meetings = await MeetingModel.findAll({
       where:{
-        start:{
-          [Op.gte] : moment.tz('Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
-        },
         status: "pending"
       }
     })
@@ -291,6 +409,7 @@ const getMeetingRequest = async(req,res,next)=>{
   }
 }
 
+// get Live meeting Call
 const getLiveMeetingCall = async (req, res, next) => {
   try {
 
@@ -318,8 +437,10 @@ const getLiveMeetingCall = async (req, res, next) => {
   }
 }
 
+// Get just upcoming video call
 const getUpcomingMeetingCall = async (req, res, next) => {
   try {
+
     const currentTime = moment.tz('Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
 
     const upcomingCalls = await MeetingModel.findAll({
@@ -330,15 +451,18 @@ const getUpcomingMeetingCall = async (req, res, next) => {
         }
       },
       order: [['start', 'ASC']], // Sort by start time in ascending order
-      limit: 1 // Limit the number of results to 1
+      limit: 2 // Limit the number of results to 1
     });
 
-    res.json({ success: true, data: upcomingCalls });
+    return res.status(200).json({
+      success: true,
+      data: upcomingCalls
+    })
+
   } catch (error) {
     next(new ErrorHandler(error.message, 500));
   }
 }
-
 
 // Update meeting by salePerson
 const updateMeeting = async(req,res,next)=>{
@@ -357,7 +481,29 @@ const updateMeeting = async(req,res,next)=>{
     if(meeting.salePersonId && meeting.salePersonId !== req.user.id){
       return next(new ErrorHandler("You are not authorized person for this resource",403))
     }
-    
+
+    if(req.body.seduledDate && (!req.body.start || !req.body.end)){
+        return next(new ErrorHandler("missing start and end time",400))
+    }
+
+    if(req.body.seduledDate){
+      if(!isDateGreterThanToday(req.body.seduledDate)){
+        return next(new ErrorHandler("Seduled date not less than today's date",400))
+      }
+    }
+
+    if(req.body.start){
+      if(!isValidStartTime(req.body.start)){
+        return next(new ErrorHandler("Startime of meeting should be greater than current time",400))
+      }  
+    }
+
+    if(req.body.end){
+      if(!isValidEndTime(req.body.start , req.body.end)){
+        return next(new ErrorHandler("endTime of meeting should not be less than startTime of meeting",400))
+      }
+    }
+
     const [,updateMeeting]  = await MeetingModel.update({ 
       ...req.body, 
         salePersonId:req.user.id , 
@@ -392,6 +538,7 @@ const getAllMeetings = async (req, res, next) => {
         salePersonId: req.user.id,
         status: "confirmed",
       },
+      order: [['start', 'ASC']] // Sort by start time in ascending order
     }
 
     if(req.query?.date){
@@ -402,13 +549,13 @@ const getAllMeetings = async (req, res, next) => {
 
     const meetings = await MeetingModel.findAll(meetingSearchQuery);
 
-    if (meetings.length > 1) {
-      meetings.sort((a, b) => {
-        const dateA = new Date(a.seduledDate);
-        const dateB = new Date(b.seduledDate);
-        return dateA - dateB;
-      });
-    }
+    // if (meetings.length > 1) {
+    //   meetings.sort((a, b) => {
+    //     const dateA = new Date(a.seduledDate);
+    //     const dateB = new Date(b.seduledDate);
+    //     return dateA - dateB;
+    //   });
+    // }
 
     return res.status(200).json({
       success: true,
@@ -526,4 +673,14 @@ const deleteMeetingById = async (req, res) => {
 };
 
 
-module.exports = {meetingCreate , updateMeeting , getAllMeetings , getSingleMeetingById , deleteMeetingById , getMeetingRequest, getLiveMeetingCall , getUpcomingMeetingCall};
+module.exports = {
+  meetingCreate , 
+  updateMeeting , 
+  getAllMeetings , 
+  getSingleMeetingById , 
+  deleteMeetingById , 
+  getMeetingRequest, 
+  getLiveMeetingCall , 
+  getUpcomingMeetingCall,
+  availableSlotsForSalePerson
+};

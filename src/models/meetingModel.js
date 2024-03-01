@@ -47,7 +47,6 @@ const MeetingModel = sequelize.define("meeting" , {
     },
     status:{
         type:DataTypes.ENUM('pending', 'confirmed', 'completed', 'canceled'),
-        allowNull:false,
         defaultValue: 'pending'
     },
     organizationId:{
