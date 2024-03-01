@@ -264,16 +264,26 @@ const availableSlotsForSalePerson = async (req , res , next)=>{
     // Create an array to store the available slots
     const availableSlots = [];
 
-    // Initialize the start time as the start of the day
-    let currentTime = moment(startTime)
+    // Get the current time
+    const currentTime = moment.tz('Asia/Kolkata').utc();
 
-    while (currentTime.isBefore(endTime)) {
-      const meetingAtSlot = meetings.find(meeting => moment(meeting.start).isSame(currentTime));
+    console.log("currentTime" , currentTime)
+
+    // Initialize the start time as the next half-hour slot after the current time
+    let nextSlotTime = moment.tz('Asia/Kolkata').utc().set({ hour: currentTime.hour(), minute: currentTime.minute(), second: 0, millisecond: 0 });
+    nextSlotTime.add(30 - nextSlotTime.minute() % 30, 'minutes');
+
+
+    console.log("nextTimeSlot" ,  nextSlotTime)
+
+
+    while (nextSlotTime.isBefore(endTime)) {
+      const meetingAtSlot = meetings.find(meeting => moment(meeting.start).isSame(nextSlotTime));
       if (!meetingAtSlot) {
-        availableSlots.push(currentTime.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'));
+        availableSlots.push(nextSlotTime.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'));
       }
        // Move to the next hour
-       currentTime.add(30, 'minutes');
+       nextSlotTime.add(30, 'minutes');
     }
 
     // // Iterate through the meetings
