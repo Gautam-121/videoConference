@@ -74,7 +74,7 @@ const getAllMeeting = async (req, res, next) => {
       },
     };
 
-    if(req.query.startDate && req.query.endDate) {
+    if (req.query.startDate && req.query.endDate) {
       filterMeetings.where.scheduledDate = {
         [Op.between]: [
           req.query.startDate + "T00:00:00.000Z",
@@ -94,7 +94,7 @@ const getAllMeeting = async (req, res, next) => {
       limit: resultPerPage,
     });
 
-    if(meetings.length == 0) {
+    if (meetings.length == 0) {
       return res.status(200).json({
         success: true,
         data: meetings,
@@ -157,58 +157,58 @@ const getAllMeeting = async (req, res, next) => {
   }
 };
 
-const getMeetingBySearch = async (req , res , next)=>{
+const getMeetingBySearch = async (req, res, next) => {
   try {
-    
+
   } catch (error) {
-    return next(new ErrorHandler(error.message , 500))
+    return next(new ErrorHandler(error.message, 500))
   }
 }
 
-const availableSlots = async (req , res , next)=>{
+const availableSlots = async (req, res, next) => {
   try {
 
     console.log("Enter")
 
     const date = new Date(req.params.date);
-    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() , 10, 0, 0);
-    const endOfDay =   new Date(date.getFullYear(), date.getMonth(), date.getDate(), 19, 0, 0);
+    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 10, 0, 0);
+    const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 19, 0, 0);
 
-    console.log("date" , date)
-    console.log("startOfDay" , startOfDay)
-    console.log("endOfDay" , endOfDay)
-    
-  // Get all meetings scheduled on the given date
-const meetings = await MeetingModel.findAll({
-  where: {
-    scheduledDateTime: {
-      [Op.gte]: startOfDay,
-      [Op.lt]: endOfDay
-    },
-    status: {
-      [Op.in]: ['pending', 'confirmed']
-    },
-  },
-  include: {
-    model: UserModel,
-    as: 'teamMember',
-    where: { role: 'host' },
-  },
-});
+    console.log("date", date)
+    console.log("startOfDay", startOfDay)
+    console.log("endOfDay", endOfDay)
 
-console.log("Meetings of host" , meetings)
+    // Get all meetings scheduled on the given date
+    const meetings = await MeetingModel.findAll({
+      where: {
+        scheduledDateTime: {
+          [Op.gte]: startOfDay,
+          [Op.lt]: endOfDay
+        },
+        status: {
+          [Op.in]: ['pending', 'confirmed']
+        },
+      },
+      include: {
+        model: UserModel,
+        as: 'teamMember',
+        where: { role: 'host' },
+      },
+    });
 
-// return res.status(200).json({
-//   success: true,
-//   data: meetings
-// })
+    console.log("Meetings of host", meetings)
 
-// Get all team members with the role 'host'
-const teamMembers = await UserModel.findAll({
-  where: { 
-    role: 'host'
-  }
-});
+    // return res.status(200).json({
+    //   success: true,
+    //   data: meetings
+    // })
+
+    // Get all team members with the role 'host'
+    const teamMembers = await UserModel.findAll({
+      where: {
+        role: 'host'
+      }
+    });
     // Determine the available slots
     const availableSlots = [];
     let currentSlot = startOfDay;
@@ -227,7 +227,8 @@ const teamMembers = await UserModel.findAll({
   }
 }
 
-const availableSlotsForSalePerson = async (req , res , next)=>{
+
+const availableSlotsForSalePerson = async (req, res, next) => {
   try {
 
     if (!req.params.date) {
@@ -237,17 +238,12 @@ const availableSlotsForSalePerson = async (req , res , next)=>{
     // Get the date from the request parameters
     const date = req.params.date;
 
-    console.log("date" , date)
+    console.log("date", date)
     moment.tz(req.query.date, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
 
     // Define the start and end times for the given date
     const startTime = moment.tz(date, 'Asia/Kolkata').set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
     const endTime = moment.tz(date, 'Asia/Kolkata').set({ hour: 18, minute: 0, second: 0, millisecond: 0 }).utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
-
-
-
-
-    console.log("startTime" , startTime , "  " , endTime)
 
     // Get all meetings for the salesperson that are happening after the current time
     const meetings = await MeetingModel.findAll({
@@ -267,52 +263,25 @@ const availableSlotsForSalePerson = async (req , res , next)=>{
     // Get the current time
     const currentTime = moment.tz('Asia/Kolkata').utc();
 
-    console.log("currentTime" , currentTime)
+    console.log("currentTime", currentTime)
 
     // Initialize the start time as the next half-hour slot after the current time
     let nextSlotTime = moment.tz('Asia/Kolkata').utc().set({ hour: currentTime.hour(), minute: currentTime.minute(), second: 0, millisecond: 0 });
     nextSlotTime.add(30 - nextSlotTime.minute() % 30, 'minutes');
 
-
-    console.log("nextTimeSlot" ,  nextSlotTime)
-
+    // If the request is for today's date, use the current time as the start time
+    if (!moment.tz(date, 'Asia/Kolkata').isSame(currentTime, 'day')) {
+      nextSlotTime = moment.tz(startTime, 'Asia/Kolkata').utc();
+    }
 
     while (nextSlotTime.isBefore(endTime)) {
       const meetingAtSlot = meetings.find(meeting => moment(meeting.start).isSame(nextSlotTime));
       if (!meetingAtSlot) {
         availableSlots.push(nextSlotTime.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'));
       }
-       // Move to the next hour
-       nextSlotTime.add(30, 'minutes');
+      // Move to the Interval 
+      nextSlotTime.add(30, 'minutes');
     }
-
-    // // Iterate through the meetings
-    // meetings.forEach((meeting, index) => {
-
-    //   // Calculate the end time of the meeting
-    //   const endTime = moment(meeting.start);
-
-    //   // If there's a gap between the current time and the meeting
-    //   if (currentTime.isBefore(endTime)) {
-    //     // Add the available slot to the list
-    //     availableSlots.push({
-    //       start: currentTime.toISOString(),
-    //       end: endTime.toISOString()
-    //     });
-    //   }
-
-    //   // Update the current time to the end time of the meeting
-    //   currentTime = moment(meeting.end);
-    // });
-
-    // // If there's a gap between the last meeting and the end of the day
-    // if (currentTime.isBefore(endTime)) {
-    //   // Add the available slot to the list
-    //   availableSlots.push({
-    //     start: currentTime.toISOString(),
-    //     end: endTime.toISOString()
-    //   });
-    // }
 
     return res.status(200).json({
       success: true,
@@ -320,80 +289,80 @@ const availableSlotsForSalePerson = async (req , res , next)=>{
     });
 
   } catch (error) {
-    return next(new ErrorHandler(error.message , 400))
+    return next(new ErrorHandler(error.message, 400))
   }
 }
 
 // Customer request for video call
-const meetingCreate = async(req,res,next)=>{
+const meetingCreate = async (req, res, next) => {
   try {
 
-    const {name ,email , phone , seduledDate , start , end , organizationId} = req.body
+    const { name, email, phone, seduledDate, start, end, organizationId } = req.body
 
-    if(!name || !email || !phone || !seduledDate || !start || !end || !organizationId){
-      return next(new ErrorHandler("Provide all neccessary field" , 400))
+    if (!name || !email || !phone || !seduledDate || !start || !end || !organizationId) {
+      return next(new ErrorHandler("Provide all neccessary field", 400))
     }
 
-    if(!isValidEmail(email)){
-      return next(new ErrorHandler("Invalid Email id" , 400))
+    if (!isValidEmail(email)) {
+      return next(new ErrorHandler("Invalid Email id", 400))
     }
 
-    if(!isValidPhone(phone)){
-      return next(new ErrorHandler("Invalid Phone Number" , 400))
+    if (!isValidPhone(phone)) {
+      return next(new ErrorHandler("Invalid Phone Number", 400))
     }
 
-    if(!isDateGreterThanToday(seduledDate)){
-      return next(new ErrorHandler("Seduled date not less than today's date",400))
+    if (!isDateGreterThanToday(seduledDate)) {
+      return next(new ErrorHandler("Seduled date not less than today's date", 400))
     }
 
-    if(!isValidStartTime(start)){
-      return next(new ErrorHandler("Startime of meeting should be greater than current time",400))
+    if (!isValidStartTime(start)) {
+      return next(new ErrorHandler("Startime of meeting should be greater than current time", 400))
     }
 
-    if(!isValidEndTime(start , end)){
-      return next(new ErrorHandler("endTime of meeting should not be less than startTime of meeting",400))
+    if (!isValidEndTime(start, end)) {
+      return next(new ErrorHandler("endTime of meeting should not be less than startTime of meeting", 400))
     }
 
-    const isExist =  await MeetingModel.findOne({
-      where:{
-        email:email,
-        seduledDate:moment.tz(seduledDate, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
+    const isExist = await MeetingModel.findOne({
+      where: {
+        email: email,
+        seduledDate: moment.tz(seduledDate, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
       }
     })
 
-    if(isExist){
-      return next(new ErrorHandler(`You have already send a video call Request on ${seduledDate} , Please select another day for seduling video call meeting` , 400))
+    if (isExist) {
+      return next(new ErrorHandler(`You have already send a video call Request on ${seduledDate} , Please select another day for seduling video call meeting`, 400))
     }
 
-    const meeting  = await MeetingModel.create({
+    const meeting = await MeetingModel.create({
       ...req.body,
-      seduledDate:moment.tz(req.body.seduledDate, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
-      start:moment.tz(req.body.start, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
-      end:moment.tz(req.body.end, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
+      seduledDate: moment.tz(req.body.seduledDate, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+      start: moment.tz(req.body.start, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+      end: moment.tz(req.body.end, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
     })
 
     return res.status(201).json({
       success: true,
       message: "Meeting seduled successfully",
-      data : meeting
+      data: meeting
     })
 
   } catch (error) {
-    return next(new ErrorHandler(error.message,500))
+    return next(new ErrorHandler(error.message, 500))
   }
 }
 
 // Get meeting Requested by customer
-const getMeetingRequest = async(req,res,next)=>{
+const getMeetingRequest = async (req, res, next) => {
   try {
 
     let meetings = await MeetingModel.findAll({
-      where:{
+      where: {
         status: "pending"
       }
     })
 
-    if(meetings.length==0){
+    if (meetings.length == 0) {
       return res.status(200).json({
         success: true,
         data: meetings
@@ -413,9 +382,9 @@ const getMeetingRequest = async(req,res,next)=>{
       message: "Data fetch Successfully",
       data: uniqueMeetings
     })
-    
+
   } catch (error) {
-    return next(new ErrorHandler(error.message , 500))
+    return next(new ErrorHandler(error.message, 500))
   }
 }
 
@@ -475,52 +444,52 @@ const getUpcomingMeetingCall = async (req, res, next) => {
 }
 
 // Update meeting by salePerson
-const updateMeeting = async(req,res,next)=>{
+const updateMeeting = async (req, res, next) => {
   try {
 
-    if(!req.params.id){
+    if (!req.params.id) {
       return next(new ErrorHandler("missing meeting id", 400))
     }
 
     let meeting = await MeetingModel.findByPk(req.params.id)
 
-    if(!meeting){
-      return next(new ErrorHandler("Meeting not found",404))
+    if (!meeting) {
+      return next(new ErrorHandler("Meeting not found", 404))
     }
 
-    if(meeting.salePersonId && meeting.salePersonId !== req.user.id){
-      return next(new ErrorHandler("You are not authorized person for this resource",403))
+    if (meeting.salePersonId && meeting.salePersonId !== req.user.id) {
+      return next(new ErrorHandler("You are not authorized person for this resource", 403))
     }
 
-    if(req.body.seduledDate && (!req.body.start || !req.body.end)){
-        return next(new ErrorHandler("missing start and end time",400))
+    if (req.body.seduledDate && (!req.body.start || !req.body.end)) {
+      return next(new ErrorHandler("missing start and end time", 400))
     }
 
-    if(req.body.seduledDate){
-      if(!isDateGreterThanToday(req.body.seduledDate)){
-        return next(new ErrorHandler("Seduled date not less than today's date",400))
+    if (req.body.seduledDate) {
+      if (!isDateGreterThanToday(req.body.seduledDate)) {
+        return next(new ErrorHandler("Seduled date not less than today's date", 400))
       }
     }
 
-    if(req.body.start){
-      if(!isValidStartTime(req.body.start)){
-        return next(new ErrorHandler("Startime of meeting should be greater than current time",400))
-      }  
-    }
-
-    if(req.body.end){
-      if(!isValidEndTime(req.body.start , req.body.end)){
-        return next(new ErrorHandler("endTime of meeting should not be less than startTime of meeting",400))
+    if (req.body.start) {
+      if (!isValidStartTime(req.body.start)) {
+        return next(new ErrorHandler("Startime of meeting should be greater than current time", 400))
       }
     }
 
-    const [,updateMeeting]  = await MeetingModel.update({ 
-      ...req.body, 
-        salePersonId:req.user.id , 
-        status: "confirmed"  
-      },
+    if (req.body.end) {
+      if (!isValidEndTime(req.body.start, req.body.end)) {
+        return next(new ErrorHandler("endTime of meeting should not be less than startTime of meeting", 400))
+      }
+    }
+
+    const [, updateMeeting] = await MeetingModel.update({
+      ...req.body,
+      salePersonId: req.user.id,
+      status: "confirmed"
+    },
       {
-        where: { 
+        where: {
           id: req.params.id
         },
         returning: true, // This option ensures that the updated data is returned
@@ -531,11 +500,11 @@ const updateMeeting = async(req,res,next)=>{
     return res.status(201).json({
       success: true,
       message: "Meeting Updated successfully",
-      data : updateMeeting
+      data: updateMeeting
     })
 
   } catch (error) {
-    return next(new ErrorHandler(error.message,500))
+    return next(new ErrorHandler(error.message, 500))
   }
 }
 
@@ -551,7 +520,7 @@ const getAllMeetings = async (req, res, next) => {
       order: [['start', 'ASC']] // Sort by start time in ascending order
     }
 
-    if(req.query?.date){
+    if (req.query?.date) {
       meetingSearchQuery.where.seduledDate = {
         [Op.eq]: moment.tz(req.query.date, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
       }
@@ -615,7 +584,7 @@ const getAllMeetings = async (req, res, next) => {
 };
 
 // Get a specific meeting by ID with assign salePerson
-const getSingleMeetingById = async (req, res , next) => {
+const getSingleMeetingById = async (req, res, next) => {
   try {
 
     if (!req.params.id) {
@@ -623,19 +592,19 @@ const getSingleMeetingById = async (req, res , next) => {
     }
 
     const meeting = await MeetingModel.findOne({
-      where:{
+      where: {
         id: req.params.id,
         salePersonId: req.user.id
       }
     });
 
     if (!meeting) {
-      return next(new ErrorHandler("Meeting not found",400))
+      return next(new ErrorHandler("Meeting not found", 400))
     }
 
     return res.status(200).json({
       success: true,
-      message:"Data send Successfully",
+      message: "Data send Successfully",
       data: meeting
     })
 
@@ -653,13 +622,13 @@ const deleteMeetingById = async (req, res) => {
     }
 
     const meeting = await MeetingModel.findOne({
-      where:{
-        id:  req.params.id,
+      where: {
+        id: req.params.id,
         salePersonId: req.user.id
       }
     });
 
-    if(!meeting) {
+    if (!meeting) {
       return res.status(404).json({
         success: false,
         message: "Meeting not found",
@@ -684,13 +653,13 @@ const deleteMeetingById = async (req, res) => {
 
 
 module.exports = {
-  meetingCreate , 
-  updateMeeting , 
-  getAllMeetings , 
-  getSingleMeetingById , 
-  deleteMeetingById , 
-  getMeetingRequest, 
-  getLiveMeetingCall , 
+  meetingCreate,
+  updateMeeting,
+  getAllMeetings,
+  getSingleMeetingById,
+  deleteMeetingById,
+  getMeetingRequest,
+  getLiveMeetingCall,
   getUpcomingMeetingCall,
   availableSlotsForSalePerson
 };
