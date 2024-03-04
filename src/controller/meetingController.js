@@ -238,8 +238,9 @@ const availableSlotsForSalePerson = async (req, res, next) => {
     // Get the date from the request parameters
     const date = req.params.date;
 
-    console.log("date", date)
-    moment.tz(req.query.date, 'Asia/Kolkata').utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]')
+    if (!isDateGreterThanToday(date)) {
+      return next(new ErrorHandler("Seduled date not less than today's date", 400))
+    }
 
     // Define the start and end times for the given date
     const startTime = moment.tz(date, 'Asia/Kolkata').set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).utc().format('YYYY-MM-DDTHH:mm:ss.SSS[Z]');
@@ -279,7 +280,7 @@ const availableSlotsForSalePerson = async (req, res, next) => {
       if (!meetingAtSlot) {
         availableSlots.push(nextSlotTime.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'));
       }
-      // Move to the Interval 
+      // Move to the Interval
       nextSlotTime.add(30, 'minutes');
     }
 

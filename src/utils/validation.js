@@ -7,7 +7,6 @@ const today = moment();
 
 const isValidEmail = email => validator.isEmail(email);
 
-
 const isValidPhone = (phone) => validator.isMobilePhone(phone, "en-IN");
 
 const isDateGreterThanToday = date => moment(date).isSameOrAfter(today, "day");
