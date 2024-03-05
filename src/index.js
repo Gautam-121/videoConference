@@ -32,7 +32,8 @@ process.on("uncaughtException" , (err)=>{
 //Middleware for error
 app.use(errorMiddleware)
 
-const server = app.listen(process.env.PORT || 3000 , ()=>{
+
+const server = app.listen(process.env.PORT || 3000 ,  ()=>{
     console.log(`Server running on Port ${process.env.PORT || 8081}`)
 })
 
