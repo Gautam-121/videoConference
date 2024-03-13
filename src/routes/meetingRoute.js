@@ -20,9 +20,6 @@ router.route("/meeting/customer").post(meetingCreate);
 
 router.route("/meeting/saleperson").post(isAuthenticatedUser , createMeetingBySalePerson)
 
-
-// router.route("/meetings").get( isAuthenticatedUser , getAllMeeting)
-
 router.route("/meeting/me").get(isAuthenticatedUser, getAllMeetings);
 
 router.route("/meeting/me/:id").get(isAuthenticatedUser, getSingleMeetingById);
@@ -39,12 +36,9 @@ router.route("/meeting/upcomingCall").get(isAuthenticatedUser, getUpcomingMeetin
 
 router.route("/meeting/availableSlot/saleperson/:date").get(isAuthenticatedUser, availableSlotsForSalePerson);
 
-router.route("/meeting/availableSlot/seduled/:date").get(availableSlotForCustomerRequest)
+router.route("/meeting/availableSlot/scheduled/:date").get(availableSlotForCustomerRequest)
 
 router.route("/meeting/availablePerson/instant/:organizationId").get(instantMeetingAvaibillity)
 
-
-
-// router.route("/meetings/availableSlot/:date").get(availableSlots)
 
 module.exports = router;
