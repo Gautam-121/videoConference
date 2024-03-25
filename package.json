@@ -4,7 +4,9 @@
   "description": "\"Video Conference Project\"",
   "main": "index.js",
   "scripts": {
-    "start": "npx nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "start": "npx src/node index.js",
+    "build": "npm i"
   },
   "author": "",
   "license": "ISC",

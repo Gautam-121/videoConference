@@ -1,7 +1,9 @@
 const {Sequelize} = require("sequelize")
 require("dotenv").config({path:"./.env"})
 
-const sequelize = new Sequelize(process.env.DATABASE_URI);
+const sequelize = new Sequelize(process.env.DATABASE_URI,{
+  dialectModule: require('pg')
+});
 
 const connectDB = async () => {
   try {
