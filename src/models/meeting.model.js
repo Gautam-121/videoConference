@@ -1,7 +1,8 @@
 const {DataTypes} = require("sequelize")
-const {sequelize} = require("../config/database")
+const {sequelize} = require("../config/db.js")
+const SalesUserModel = require("./saleUser.model.js")
 
-const CustomerModel = sequelize.define("customer", {
+const MeetingModel = sequelize.define("meeting" , {
     name:{
         type:DataTypes.STRING,
         allowNull:false,
@@ -36,27 +37,29 @@ const CustomerModel = sequelize.define("customer", {
         type:DataTypes.DATE,
         allowNull:false
     },
-    startDate:{
-        type:DataTypes.TIME,
+    start:{
+        type:DataTypes.DATE,
         allowNull:false
     },
-    endDate:{
-        type:DataTypes.TIME,
+    end:{
+        type:DataTypes.DATE,
         allowNull: false
     },
     status:{
         type:DataTypes.ENUM('pending', 'confirmed', 'completed', 'canceled'),
-        allowNull:false,
         defaultValue: 'pending'
     },
     organizationId:{
         type:DataTypes.STRING,
         allowNull: false
     },
-    isDeleted:{
-        type:DataTypes.BOOLEAN,
-        defaultValue:false
-    }
 })
 
-module.exports = CustomerModel
+// Define the association
+MeetingModel.belongsTo(SalesUserModel, {
+    foreignKey: 'salePersonId',
+    as: 'salepPerson',
+});
+
+module.exports = MeetingModel
+

@@ -1,5 +1,5 @@
 const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database.js");
+const { sequelize } = require("../config/db.js");
 const bcrypt = require("bcryptjs");
 
 const SalesUserModel = sequelize.define("sale", {
@@ -59,7 +59,6 @@ const SalesUserModel = sequelize.define("sale", {
     },
   }
 );
-
 
 SalesUserModel.prototype.comparePassword = async function (password) {
     return await bcrypt.compare(password, this.password);

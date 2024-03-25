@@ -1,5 +1,5 @@
-const MeetingModel = require("../models/meetingModel");
-const { Op } = require("sequelize");
+const MeetingModel = require("../models/meeting.model");
+const { Op, JSON, json } = require("sequelize");
 const ErrorHandler = require("../utils/errorHandler");
 const {
   isDateGreterThanToday,
@@ -9,32 +9,31 @@ const {
   isValidStartTime,
 } = require("../utils/validation");
 const moment = require("moment-timezone");
-const SalesUserModel = require("../models/salesUserModel");
+const SalesUserModel = require("../models/saleUser.model");
+const { client } = require("../constant");
 
 // Customer request for video call
 const meetingCreate = async (req, res, next) => {
   try {
-    const { name, email, phone, seduledDate, start, end, organizationId } =
-      req.body;
 
-    if (
-      !name ||
-      !email ||
-      !phone ||
-      !seduledDate ||
-      !start ||
-      !end ||
-      !organizationId
-    ) {
-      return next(new ErrorHandler("Provide all neccessary field", 400));
+    const { name, email, phone, seduledDate, start, end, organizationId } = req.body;
+
+    if (!name || !email ||!phone ||!seduledDate ||!start ||!end ||!organizationId) {
+      return next(
+        new ErrorHandler("Provide all neccessary field", 400)
+      );
     }
 
     if (!isValidEmail(email)) {
-      return next(new ErrorHandler("Invalid Email id", 400));
+      return next(
+        new ErrorHandler("Invalid Email id", 400)
+      );
     }
 
     if (!isValidPhone(phone)) {
-      return next(new ErrorHandler("Invalid Phone Number", 400));
+      return next(
+        new ErrorHandler("Invalid Phone Number", 400)
+      );
     }
 
     if (!isDateGreterThanToday(seduledDate)) {
@@ -64,10 +63,9 @@ const meetingCreate = async (req, res, next) => {
     const isExist = await MeetingModel.findOne({
       where: {
         email: email,
-        seduledDate: moment
-          .tz(seduledDate, "Asia/Kolkata")
-          .utc()
-          .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
+        seduledDate: moment.tz(seduledDate, "Asia/Kolkata").utc().format(
+          "YYYY-MM-DDTHH:mm:ss.SSS[Z]"
+        ),
       },
     });
 
@@ -82,16 +80,13 @@ const meetingCreate = async (req, res, next) => {
 
     const meeting = await MeetingModel.create({
       ...req.body,
-      seduledDate: moment
-        .tz(req.body.seduledDate, "Asia/Kolkata")
+      seduledDate: moment.tz(req.body.seduledDate, "Asia/Kolkata")
         .utc()
         .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
-      start: moment
-        .tz(req.body.start, "Asia/Kolkata")
+      start: moment.tz(req.body.start, "Asia/Kolkata")
         .utc()
         .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
-      end: moment
-        .tz(req.body.end, "Asia/Kolkata")
+      end: moment.tz(req.body.end, "Asia/Kolkata")
         .utc()
         .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
     });
@@ -102,45 +97,34 @@ const meetingCreate = async (req, res, next) => {
       data: meeting,
     });
   } catch (error) {
-    return next(new ErrorHandler(error.message, 500));
+    return next(
+      new ErrorHandler(error.message, 500)
+    );
   }
 };
 
 // Create meeting by Sale person
 const createMeetingBySalePerson = async (req, res, next) => {
   try {
-    const {
-      name,
-      email,
-      phone,
-      seduledDate,
-      start,
-      end,
-      organizationId,
-      videoCallLink,
-      meetingId,
-    } = req.body;
 
-    if (
-      !name ||
-      !email ||
-      !phone ||
-      !seduledDate ||
-      !start ||
-      !end ||
-      !organizationId ||
-      !videoCallLink ||
-      !meetingId
-    ) {
-      return next(new ErrorHandler("Provide all neccessary field", 400));
+    const {name,email,phone,seduledDate,start,end,organizationId,videoCallLink, meetingId,} = req.body;
+
+    if (!name ||!email ||!phone ||!seduledDate ||!start ||!end ||!organizationId ||!videoCallLink ||!meetingId) {
+      return next(
+        new ErrorHandler("Provide all neccessary field", 400)
+      );
     }
 
     if (!isValidEmail(email)) {
-      return next(new ErrorHandler("Invalid Email id", 400));
+      return next(
+        new ErrorHandler("Invalid Email id", 400)
+      );
     }
 
     if (!isValidPhone(phone)) {
-      return next(new ErrorHandler("Invalid Phone Number", 400));
+      return next(
+        new ErrorHandler("Invalid Phone Number", 400)
+      );
     }
 
     if (!isDateGreterThanToday(seduledDate)) {
@@ -170,8 +154,7 @@ const createMeetingBySalePerson = async (req, res, next) => {
     const isExist = await MeetingModel.findOne({
       where: {
         email: email,
-        seduledDate: moment
-          .tz(seduledDate, "Asia/Kolkata")
+        seduledDate: moment.tz(seduledDate, "Asia/Kolkata")
           .utc()
           .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
       },
@@ -188,20 +171,17 @@ const createMeetingBySalePerson = async (req, res, next) => {
 
     const meeting = await MeetingModel.create({
       ...req.body,
-      seduledDate: moment
-        .tz(seduledDate, "Asia/Kolkata")
-        .utc()
-        .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
-      start: moment
-        .tz(start, "Asia/Kolkata")
-        .utc()
-        .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
-      end: moment
-        .tz(end, "Asia/Kolkata")
-        .utc()
-        .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
       salePersonId: req.user.id,
       status: "confirmed",
+      seduledDate: moment.tz(seduledDate, "Asia/Kolkata")
+        .utc()
+        .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
+      start: moment.tz(start, "Asia/Kolkata")
+        .utc()
+        .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
+      end: moment.tz(end, "Asia/Kolkata")
+        .utc()
+        .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
     });
 
     return res.status(201).json({
@@ -210,21 +190,28 @@ const createMeetingBySalePerson = async (req, res, next) => {
       data: meeting,
     });
   } catch (error) {
-    return next(new ErrorHandler(error.message, 500));
+    return next(
+      new ErrorHandler(error.message, 500)
+    );
   }
 };
 
 // Update meeting by salePerson
 const updateMeeting = async (req, res, next) => {
   try {
+
     if (!req.params.id) {
-      return next(new ErrorHandler("missing meeting id", 400));
+      return next(
+        new ErrorHandler("missing meeting id", 400)
+      );
     }
 
     let meeting = await MeetingModel.findByPk(req.params.id);
 
     if (!meeting) {
-      return next(new ErrorHandler("Meeting not found", 404));
+      return next(
+        new ErrorHandler("Meeting not found", 404)
+      );
     }
 
     if (meeting.salePersonId && meeting.salePersonId !== req.user.id) {
@@ -251,7 +238,9 @@ const updateMeeting = async (req, res, next) => {
     }
 
     if (req.body.seduledDate && (!req.body.start || !req.body.end)) {
-      return next(new ErrorHandler("missing start and end time", 400));
+      return next(
+        new ErrorHandler("missing start and end time", 400)
+      );
     }
 
     if (req.body.seduledDate) {
@@ -260,8 +249,8 @@ const updateMeeting = async (req, res, next) => {
           new ErrorHandler("Seduled date not less than today's date", 400)
         );
       }
-      req.body.seduledDate = moment
-        .tz(req.body.seduledDate, "Asia/Kolkata")
+
+      req.body.seduledDate = moment.tz(req.body.seduledDate, "Asia/Kolkata")
         .utc()
         .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
     }
@@ -275,8 +264,7 @@ const updateMeeting = async (req, res, next) => {
           )
         );
       }
-      req.body.start = moment
-        .tz(req.body.start, "Asia/Kolkata")
+      req.body.start = moment.tz(req.body.start, "Asia/Kolkata")
         .utc()
         .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
     }
@@ -290,8 +278,7 @@ const updateMeeting = async (req, res, next) => {
           )
         );
       }
-      req.body.end = moment
-        .tz(req.body.end, "Asia/Kolkata")
+      req.body.end = moment.tz(req.body.end, "Asia/Kolkata")
         .utc()
         .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
     }
@@ -317,15 +304,20 @@ const updateMeeting = async (req, res, next) => {
       data: updateMeeting,
     });
   } catch (error) {
-    return next(new ErrorHandler(error.message, 500));
+    return next(
+      new ErrorHandler(error.message, 500)
+    );
   }
 };
 
 // get available slot of salePerson
 const availableSlotsForSalePerson = async (req, res, next) => {
   try {
+
     if (!req.params.date) {
-      return next(new ErrorHandler("Date is missing", 400));
+      return next(
+        new ErrorHandler("Date is missing", 400)
+      );
     }
 
     // Get the date from the request parameters
@@ -338,13 +330,12 @@ const availableSlotsForSalePerson = async (req, res, next) => {
     }
 
     // Define the start and end times for the given date
-    const startTime = moment
-      .tz(date, "Asia/Kolkata")
+    const startTime = moment.tz(date, "Asia/Kolkata")
       .set({ hour: 10, minute: 0, second: 0, millisecond: 0 })
       .utc()
       .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
-    const endTime = moment
-      .tz(date, "Asia/Kolkata")
+
+    const endTime = moment.tz(date, "Asia/Kolkata")
       .set({ hour: 18, minute: 0, second: 0, millisecond: 0 })
       .utc()
       .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
@@ -368,8 +359,7 @@ const availableSlotsForSalePerson = async (req, res, next) => {
     const currentTime = moment.tz("Asia/Kolkata").utc();
 
     // Initialize the start time as the next half-hour slot after the current time
-    let nextSlotTime = moment
-      .tz("Asia/Kolkata")
+    let nextSlotTime = moment.tz("Asia/Kolkata")
       .utc()
       .set({
         hour: currentTime.hour(),
@@ -377,6 +367,7 @@ const availableSlotsForSalePerson = async (req, res, next) => {
         second: 0,
         millisecond: 0,
       });
+      
     nextSlotTime.add(30 - (nextSlotTime.minute() % 30), "minutes");
 
     // If the request is for today's date, use the current time as the start time
@@ -385,9 +376,11 @@ const availableSlotsForSalePerson = async (req, res, next) => {
     }
 
     while (nextSlotTime.isBefore(endTime)) {
+
       const meetingAtSlot = meetings.find((meeting) =>
         moment(meeting.start).isSame(nextSlotTime)
       );
+
       if (!meetingAtSlot) {
         availableSlots.push(nextSlotTime.format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"));
       }
@@ -400,13 +393,16 @@ const availableSlotsForSalePerson = async (req, res, next) => {
       data: availableSlots,
     });
   } catch (error) {
-    return next(new ErrorHandler(error.message, 400));
+    return next(
+      new ErrorHandler(error.message, 400)
+    );
   }
 };
 
 // Get meeting Requested by customer
 const getMeetingRequest = async (req, res, next) => {
   try {
+
     let meetings = await MeetingModel.findAll({
       where: {
         status: "pending",
@@ -434,17 +430,17 @@ const getMeetingRequest = async (req, res, next) => {
       data: uniqueMeetings,
     });
   } catch (error) {
-    return next(new ErrorHandler(error.message, 500));
+    return next(
+      new ErrorHandler(error.message, 500)
+    );
   }
 };
 
 // get Live meeting Call
 const getLiveMeetingCall = async (req, res, next) => {
   try {
-    const currentTime = moment
-      .tz("Asia/Kolkata")
-      .utc()
-      .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
+
+    const currentTime = moment.tz("Asia/Kolkata").utc().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
 
     const liveCalls = await MeetingModel.findOne({
       where: {
@@ -463,18 +459,19 @@ const getLiveMeetingCall = async (req, res, next) => {
       message: "Data send successfully",
       data: liveCalls,
     });
+
   } catch (error) {
-    next(new ErrorHandler(error.message, 500));
+    return next(
+      new ErrorHandler(error.message, 500)
+    );
   }
 };
 
 // Get just upcoming video call
 const getUpcomingMeetingCall = async (req, res, next) => {
   try {
-    const currentTime = moment
-      .tz("Asia/Kolkata")
-      .utc()
-      .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
+
+    const currentTime = moment.tz("Asia/Kolkata").utc().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
 
     const upcomingCalls = await MeetingModel.findAll({
       where: {
@@ -491,14 +488,18 @@ const getUpcomingMeetingCall = async (req, res, next) => {
       success: true,
       data: upcomingCalls,
     });
+
   } catch (error) {
-    next(new ErrorHandler(error.message, 500));
+    return next(
+      new ErrorHandler(error.message, 500)
+    );
   }
 };
 
 // Get All meetings by salePerson
 const getAllMeetings = async (req, res, next) => {
   try {
+    
     const meetingSearchQuery = {
       where: {
         salePersonId: req.user.id,
@@ -509,8 +510,7 @@ const getAllMeetings = async (req, res, next) => {
 
     if (req.query?.date) {
       meetingSearchQuery.where.seduledDate = {
-        [Op.eq]: moment
-          .tz(req.query.date, "Asia/Kolkata")
+        [Op.eq]: moment.tz(req.query.date, "Asia/Kolkata")
           .utc()
           .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]"),
       };
@@ -518,63 +518,27 @@ const getAllMeetings = async (req, res, next) => {
 
     const meetings = await MeetingModel.findAll(meetingSearchQuery);
 
-    // if (meetings.length > 1) {
-    //   meetings.sort((a, b) => {
-    //     const dateA = new Date(a.seduledDate);
-    //     const dateB = new Date(b.seduledDate);
-    //     return dateA - dateB;
-    //   });
-    // }
-
     return res.status(200).json({
       success: true,
       message: "Data send Successfully",
       data: meetings,
     });
 
-    // Arranged The meeting according to date;
-    const mapWithDate = new Map();
-
-    meetings.forEach((meeting) => {
-      const date = new Date(meeting.seduledDate).toISOString().slice(0, 10); // Convert to 'YYYY-MM-DD' format
-
-      if (mapWithDate.has(date)) {
-        mapWithDate.get(date).push(meeting); // If the date already exists in the map, append the value to its array
-      } else {
-        mapWithDate.set(date, [meeting]); // Otherwise, create a new array with the value
-      }
-    });
-
-    const result = [];
-    for (const [time, list] of mapWithDate) {
-      result.push({
-        date: time,
-        list: list,
-      });
-    }
-
-    if (result.length > 1) {
-      result.sort((a, b) => {
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
-        return dateA - dateB;
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: result,
-    });
   } catch (error) {
-    return next(new ErrorHandler(error.message, 500));
+    return next(
+      new ErrorHandler(error.message, 500)
+    );
   }
 };
 
 // Get a specific meeting by ID with assign salePerson
 const getSingleMeetingById = async (req, res, next) => {
   try {
+
     if (!req.params.id) {
-      return next(new ErrorHandler("Missing Meeting id", 400));
+      return next(
+        new ErrorHandler("Missing Meeting id", 400)
+      );
     }
 
     const meeting = await MeetingModel.findOne({
@@ -585,7 +549,9 @@ const getSingleMeetingById = async (req, res, next) => {
     });
 
     if (!meeting) {
-      return next(new ErrorHandler("Meeting not found", 400));
+      return next(
+        new ErrorHandler("Meeting not found", 400)
+      );
     }
 
     return res.status(200).json({
@@ -593,16 +559,22 @@ const getSingleMeetingById = async (req, res, next) => {
       message: "Data send Successfully",
       data: meeting,
     });
+
   } catch (error) {
-    return next(new ErrorHandler(error.message, 500));
+    return next(
+      new ErrorHandler(error.message, 500)
+    );
   }
 };
 
 // Delete a meeting
 const deleteMeetingById = async (req, res) => {
   try {
+
     if (!req.params.id) {
-      return next(new ErrorHandler("Missing Meeting Id", 400));
+      return next(
+        new ErrorHandler("Missing Meeting Id", 400)
+      );
     }
 
     const meeting = await MeetingModel.findOne({
@@ -629,19 +601,27 @@ const deleteMeetingById = async (req, res) => {
       success: true,
       message: "Meeting Deleted Successfully",
     });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return next(
+      new ErrorHandler(error.message, 500)
+    )
   }
 };
 
 const availableSlotForCustomerRequest = async (req, res, next) => {
   try {
+
     if (!req.params.date) {
-      return next(new ErrorHandler("Date is missing", 400));
+      return next(
+        new ErrorHandler("Date is missing", 400)
+      );
     }
 
-    if (!req.query.organizationId) {
-      return next(new ErrorHandler("OrganizationId is missing", 400));
+    if (!req.body.organizationId) {
+      return next(
+        new ErrorHandler("OrganizationId is missing", 400)
+      );
     }
 
     // Get the date from the request parameters
@@ -654,13 +634,12 @@ const availableSlotForCustomerRequest = async (req, res, next) => {
     }
 
     // Define the start and end times for the given date
-    const startTime = moment
-      .tz(date, "Asia/Kolkata")
+    const startTime = moment.tz(date, "Asia/Kolkata")
       .set({ hour: 10, minute: 0, second: 0, millisecond: 0 })
       .utc()
       .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
-    const endTime = moment
-      .tz(date, "Asia/Kolkata")
+
+    const endTime = moment.tz(date, "Asia/Kolkata")
       .set({ hour: 18, minute: 0, second: 0, millisecond: 0 })
       .utc()
       .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
@@ -672,7 +651,7 @@ const availableSlotForCustomerRequest = async (req, res, next) => {
           [Op.gte]: startTime,
           [Op.lt]: endTime,
         },
-        organizationId: req.query.organizationId,
+        organizationId: req.body.organizationId,
       },
       order: [["start", "ASC"]], // Sort by start time in ascending order
     });
@@ -680,7 +659,7 @@ const availableSlotForCustomerRequest = async (req, res, next) => {
     // Get All SalesPerson
     const salePersons = await SalesUserModel.findAll({
       where: {
-        organizationId: req.query.organizationId,
+        organizationId: req.body.organizationId,
       },
     });
 
@@ -697,8 +676,7 @@ const availableSlotForCustomerRequest = async (req, res, next) => {
     const currentTime = moment.tz("Asia/Kolkata").utc();
 
     // Initialize the start time as the next half-hour slot after the current time
-    let nextSlotTime = moment
-      .tz("Asia/Kolkata")
+    let nextSlotTime = moment.tz("Asia/Kolkata")
       .utc()
       .set({
         hour: currentTime.hour(),
@@ -706,6 +684,7 @@ const availableSlotForCustomerRequest = async (req, res, next) => {
         second: 0,
         millisecond: 0,
       });
+
     nextSlotTime.add(30 - (nextSlotTime.minute() % 30), "minutes");
 
     // If the request is for today's date, use the current time as the start time
@@ -730,8 +709,7 @@ const availableSlotForCustomerRequest = async (req, res, next) => {
         nextSlotTime.add(30, "minutes");
       }
 
-      nextSlotTime = moment
-        .tz("Asia/Kolkata")
+      nextSlotTime = moment.tz("Asia/Kolkata")
         .utc()
         .set({
           hour: currentTime.hour(),
@@ -739,6 +717,7 @@ const availableSlotForCustomerRequest = async (req, res, next) => {
           second: 0,
           millisecond: 0,
         });
+
       nextSlotTime.add(30 - (nextSlotTime.minute() % 30), "minutes");
 
       // If the request is for today's date, use the current time as the start time
@@ -753,16 +732,29 @@ const availableSlotForCustomerRequest = async (req, res, next) => {
       success: true,
       data: uniqueMeetings,
     });
+
   } catch (error) {
-    return next(new ErrorHandler(error.message, 500));
+    return next(
+      new ErrorHandler(error.message, 500)
+    );
   }
 };
 
 const instantMeetingAvaibillity = async (req, res, next) => {
   try {
 
+    const {name,email,phone,videoCallLink,meetingId} = req.body;
+
     if (!req.params.organizationId) {
-      return next(new ErrorHandler("OrganizationId is Missing", 400));
+      return next(
+        new ErrorHandler("OrganizationId is Missing", 400)
+      );
+    }
+
+    if(!name || !email || !phone || !videoCallLink || !meetingId){
+      return next(
+        new ErrorHandler("Provide all neccessary field", 400)
+      );
     }
 
     const salePersons = await SalesUserModel.findAll({
@@ -794,15 +786,16 @@ const instantMeetingAvaibillity = async (req, res, next) => {
 
     // Initialize the start time as the next half-hour slot after the current time
     let nextSlotStartTime = moment.tz("Asia/Kolkata").utc().set({
-        hour: currentTime.hour(),
-        minute: currentTime.minute(),
-        second: 0,
-        millisecond: 0,
-      });
+      hour: currentTime.hour(),
+      minute: currentTime.minute(),
+      second: 0,
+      millisecond: 0,
+    });
+
     nextSlotStartTime.add(30 - (nextSlotStartTime.minute() % 30), "minutes");
 
     // Calculate the end time by adding 30 minutes to the start time
-    let nextSlotEndTime = moment(nextSlotStartTime).add(30, "minutes")
+    let nextSlotEndTime = moment(nextSlotStartTime).add(30, "minutes");
 
     let meetings = await MeetingModel.findAll({
       where: {
@@ -822,7 +815,7 @@ const instantMeetingAvaibillity = async (req, res, next) => {
     }
 
     let availablePerson;
-    
+
     if (meetings.length != 0) {
       availablePerson = salePersons.filter((salePerson) => {
         return !meetings.some(
@@ -834,8 +827,15 @@ const instantMeetingAvaibillity = async (req, res, next) => {
     }
 
     // Define the start and end times for the given date
-    const startTime = moment.tz("Asia/Kolkata").set({ hour: 10, minute: 0, second: 0, millisecond: 0 }).utc().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
-    const endTime = moment.tz("Asia/Kolkata").set({ hour: 18, minute: 0, second: 0, millisecond: 0 }).utc().format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
+    const startTime = moment.tz("Asia/Kolkata")
+      .set({ hour: 10, minute: 0, second: 0, millisecond: 0 })
+      .utc()
+      .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
+
+    const endTime = moment.tz("Asia/Kolkata")
+      .set({ hour: 18, minute: 0, second: 0, millisecond: 0 })
+      .utc()
+      .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
 
     meetings = await MeetingModel.findAll({
       where: {
@@ -864,11 +864,44 @@ const instantMeetingAvaibillity = async (req, res, next) => {
       }
     });
 
-    return res.status(200).json({
-      success: true,
-      message: "Salesperson is available to take instant meetings.",
-      assignPerson,
+    const meeting = await MeetingModel.create({
+      ...req.body,
+      salePersonId: assignPerson.id,
+      seduledDate: moment().tz("Asia/Kolkata").startOf('day').utc(),
+      start: nextSlotStartTime,
+      end: nextSlotEndTime,
+      status: "confirmed",
+      organizationId:req.params.organizationId
     });
+
+    const topic = `${assignPerson.name}/${assignPerson.id}`;
+    const message = `${name} is requesting for an instant meeting now , click here to join ${meeting.videoCallLink}`;
+  
+    // Check if MQTT client is connected before publishing
+    try {
+      if (client.connected) {
+        client.publish(topic, message, (err) => {
+          if (err) {
+            console.error('Error publishing message:', err);
+            return res.status(500).json({ error: 'Failed to publish message' });
+          } else {
+            console.log('Message published successfully');
+            return res.status(200).json({ 
+              success: true,
+              message: "A salesperson is available for an instant meeting.",
+              meetingUrl: meeting.videoCallLink
+            });
+          }
+        });
+      } else {
+        console.error('MQTT client is not connected');
+        return res.status(500).json({ error: 'MQTT client is not connected' });
+      }
+    } catch (error) {
+      console.error('An unexpected error occurred:', error);
+      return res.status(500).json({ error: 'An unexpected error occurred' });
+    }
+
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }

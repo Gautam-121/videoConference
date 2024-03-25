@@ -1,6 +1,6 @@
 const ErrorHandler = require("../utils/errorHandler");
 const sendToken = require("../utils/jwtToken");
-const SalesUserModel = require("../models/salesUserModel")
+const SalesUserModel = require("../models/saleUser.model")
 const {isValidEmail,isValidPhone} = require("../utils/validation")
 
 const register = async (req, res, next) => {

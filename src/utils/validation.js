@@ -10,7 +10,6 @@ const isValidPhone = (phone) => validator.isMobilePhone(phone, "en-IN");
 
 const isDateGreterThanToday = date => moment(date).isSameOrAfter(today, "day");
 
-
 const isValidStartTime = startTime => moment(startTime).isSameOrAfter(today);
 
 const isValidEndTime = (startTime, endTime) => moment(endTime).isAfter(startTime);
