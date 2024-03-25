@@ -17,6 +17,13 @@ app.use(express.urlencoded({extended: true}))
 const meetingRouter = require("./routes/meeting.routes.js")
 const saleUserRouter = require("./routes/salesUser.routes.js")
 
+app.get("/", (req,res,next)=>{
+    return res.status(200).json({
+        success: true,
+        message: "Deployed Successfully"
+    })
+})
+
 //routes declaration
 app.use("/api/v1/meeting", meetingRouter)
 app.use("/api/v1/sales", saleUserRouter)
