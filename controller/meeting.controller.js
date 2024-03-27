@@ -888,6 +888,8 @@ const instantMeetingAvaibillity = asyncHandler( async (req, res, next) => {
   const topic = `${assignPerson.name}/${assignPerson.id}`;
   const message = `${name} is requesting for an instant meeting now , click here to join ${meeting.videoCallLink}`;
 
+  console.log(message , `The meeting assigned to ${assignPerson.email}`)
+
   // Check if MQTT client is connected before publishing
   try {
     if (client.connected) {
