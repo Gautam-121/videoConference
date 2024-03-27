@@ -36,7 +36,7 @@ router.route("/upcomingCall").get(isAuthenticatedUser, getUpcomingMeetingCall);
 
 router.route("/availableSlot/saleperson/:date").get(isAuthenticatedUser, availableSlotsForSalePerson);
 
-router.route("/availableSlot/scheduled/:date").get(availableSlotForCustomerRequest)
+router.route("/availableSlot/scheduled/:organizationId/:date").get(availableSlotForCustomerRequest)
 
 router.route("/availablePerson/instant/:organizationId").post(instantMeetingAvaibillity)
 

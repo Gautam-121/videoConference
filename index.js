@@ -36,6 +36,7 @@ connectDB()
 })
 .catch((err) => {
     console.log("MONGO db connection failed !!! ", err);
+    process.exit(1)
 })
 
 

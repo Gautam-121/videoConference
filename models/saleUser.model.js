@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/db.js");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken")
 
 const SalesUserModel = sequelize.define("sale", {
     name: {
@@ -10,6 +11,10 @@ const SalesUserModel = sequelize.define("sale", {
         notEmpty: {
           msg: "Name is Mandatory",
         },
+        len:{
+          args:[4,30],
+          msg: "Name Should be greater than 4 character and less than 30 character"
+        }
       },
     },
     email: {
@@ -19,7 +24,9 @@ const SalesUserModel = sequelize.define("sale", {
         notEmpty: {
           msg: "Email is Mandatory",
         },
-        isEmail: true,
+        isEmail: {
+          msg: "Invalid Email Address"
+        },
       },
     },
     password: {
@@ -29,7 +36,6 @@ const SalesUserModel = sequelize.define("sale", {
         notEmpty: {
           msg: "Password is Mandatory",
         },
-        len: [8, 255],
       },
     },
     phone: {
@@ -56,6 +62,11 @@ const SalesUserModel = sequelize.define("sale", {
       beforeCreate: async (user) => {
         user.password = await bcrypt.hash(user.password, 10);
       },
+      beforeUpdate: async (user) => {
+        if(user.changed("password")){
+          user.password = await bcrypt.hash(user.password, 10);
+        }
+      }
     },
   }
 );
@@ -63,5 +74,18 @@ const SalesUserModel = sequelize.define("sale", {
 SalesUserModel.prototype.comparePassword = async function (password) {
     return await bcrypt.compare(password, this.password);
 };
+
+SalesUserModel.prototype.generateAccessToken = function () {
+  return jwt.sign(
+    {
+      id: this.id, 
+      isAdmin: this.type
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: process.env.JWT_EXPIRE
+    }
+  )
+}
 
 module.exports = SalesUserModel;

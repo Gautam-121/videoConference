@@ -1,5 +1,6 @@
 const moment = require("moment");
 const validator = require("validator");
+const { PASSWORD_REGEX } = require("../constant");
 
 // Get today's date
 const today = moment();
@@ -7,6 +8,8 @@ const today = moment();
 const isValidEmail = email => validator.isEmail(email);
 
 const isValidPhone = (phone) => validator.isMobilePhone(phone, "en-IN");
+
+const isValidPassword = (password) => PASSWORD_REGEX.test(password)
 
 const isDateGreterThanToday = date => moment(date).isSameOrAfter(today, "day");
 
@@ -20,6 +23,7 @@ module.exports = {
   isDateGreterThanToday,
   isValidStartTime,
   isValidEndTime,
+  isValidPassword
 };
 
 

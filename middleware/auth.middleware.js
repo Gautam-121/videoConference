@@ -1,4 +1,3 @@
-const { default: axios } = require("axios");
 const ErrorHandler = require("../utils/errorHandler");
 const jwt = require("jsonwebtoken");
 const SalesUserModel = require("../models/saleUser.model")
