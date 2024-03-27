@@ -342,14 +342,11 @@ const updateMeeting = async (req, res, next) => {
 
 // get available slot of salePerson
 const availableSlotsForSalePerson = asyncHandler(async (req, res, next) => {
-
   // Get the date from the request parameters
   const date = req.params.date;
 
   if (!date) {
-    return next(
-      new ErrorHandler("Date is missing", 400)
-    );
+    return next(new ErrorHandler("Date is missing", 400));
   }
 
   if (!isDateGreterThanToday(date)) {
@@ -359,12 +356,14 @@ const availableSlotsForSalePerson = asyncHandler(async (req, res, next) => {
   }
 
   // Define the start and end times for the given date
-  const startTime = moment.tz(date, "Asia/Kolkata")
+  const startTime = moment
+    .tz(date, "Asia/Kolkata")
     .set({ hour: START_TIME, minute: 0, second: 0, millisecond: 0 })
     .utc()
     .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
 
-  const endTime = moment.tz(date, "Asia/Kolkata")
+  const endTime = moment
+    .tz(date, "Asia/Kolkata")
     .set({ hour: END_TIME, minute: 0, second: 0, millisecond: 0 })
     .utc()
     .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
@@ -388,24 +387,29 @@ const availableSlotsForSalePerson = asyncHandler(async (req, res, next) => {
   const currentTime = moment.tz("Asia/Kolkata").utc();
 
   // Initialize the start time as the next half-hour slot after the current time
-  let nextSlotTime = moment.tz("Asia/Kolkata")
-    .utc()
-    .set({
-      hour: currentTime.hour(),
-      minute: currentTime.minute(),
-      second: 0,
-      millisecond: 0,
-    });
+  let nextSlotTime = moment.tz("Asia/Kolkata").utc().set({
+    hour: currentTime.hour(),
+    minute: currentTime.minute(),
+    second: 0,
+    millisecond: 0,
+  });
 
-  nextSlotTime.add(TIME_SLOT - (nextSlotTime.minute() % TIME_SLOT), "minutes");
-  
+  // If current start time is less than START_TIME, set the start time to 10:00 AM
+  if (nextSlotTime.hour() < START_TIME) {
+    nextSlotTime = moment.tz(startTime, "Asia/Kolkata").utc();
+  } else {
+    nextSlotTime.add(
+      TIME_SLOT - (nextSlotTime.minute() % TIME_SLOT),
+      "minutes"
+    );
+  }
+
   // If the request is for today's date, use the current time as the start time
   if (!moment.tz(date, "Asia/Kolkata").isSame(currentTime, "day")) {
     nextSlotTime = moment.tz(startTime, "Asia/Kolkata").utc();
   }
 
   while (nextSlotTime.isBefore(endTime)) {
-
     const meetingAtSlot = meetings.find((meeting) =>
       moment(meeting.start).isSame(nextSlotTime)
     );
@@ -430,6 +434,7 @@ const getMeetingRequest = asyncHandler(async (req, res, next) => {
     where: {
       status: "pending",
     },
+    attributes: { exclude: ['videoCallLink', 'meetingId', 'salePersonId'] }
   });
 
   if (meetings.length == 0) {
@@ -665,7 +670,15 @@ const availableSlotForCustomerRequest = asyncHandler(async (req, res, next) => {
       millisecond: 0,
     });
 
-  nextSlotTime.add(TIME_SLOT - (nextSlotTime.minute() % TIME_SLOT), "minutes");
+    // If current start time is less than START_TIME, set the start time to 10:00 AM
+  if (nextSlotTime.hour() < START_TIME) {
+    nextSlotTime = moment.tz(startTime, "Asia/Kolkata").utc();
+  } else {
+    nextSlotTime.add(
+      TIME_SLOT - (nextSlotTime.minute() % TIME_SLOT),
+      "minutes"
+    );
+  }
 
   // If the request is for today's date, use the current time as the start time
   if (!moment.tz(date, "Asia/Kolkata").isSame(currentTime, "day")) {
@@ -750,6 +763,7 @@ const instantMeetingAvaibillity = asyncHandler( async (req, res, next) => {
   // Define the threshold time (5:30 PM) in Asia/Kolkata timezone
   const thresholdTime = moment.tz("17:45", "HH:mm:ss", "Asia/Kolkata").utc();
 
+
   if (currentTime >= thresholdTime) {
     return next(
       new ErrorHandler(
@@ -766,6 +780,15 @@ const instantMeetingAvaibillity = asyncHandler( async (req, res, next) => {
     second: 0,
     millisecond: 0,
   });
+
+   // If current start time is less than START_TIME, set the start time to 10:00 AM
+   if (nextSlotStartTime.hour() < START_TIME) {
+    return next(
+      new ErrorHandler(`Meeting time is between ${START_TIME} to ${END_TIME}`, 400)
+    )
+   } 
+
+  
 
   nextSlotStartTime.add(TIME_SLOT - (nextSlotStartTime.minute() % TIME_SLOT), "minutes");
 
