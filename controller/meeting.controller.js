@@ -395,7 +395,7 @@ const availableSlotsForSalePerson = asyncHandler(async (req, res, next) => {
   });
 
   // If current start time is less than START_TIME, set the start time to 10:00 AM
-  if (nextSlotTime.hour() < START_TIME) {
+  if (nextSlotTime.isBefore(startTime)) {
     nextSlotTime = moment.tz(startTime, "Asia/Kolkata").utc();
   } else {
     nextSlotTime.add(
@@ -671,7 +671,7 @@ const availableSlotForCustomerRequest = asyncHandler(async (req, res, next) => {
     });
 
     // If current start time is less than START_TIME, set the start time to 10:00 AM
-  if (nextSlotTime.hour() < START_TIME) {
+  if (nextSlotTime.isBefore(startTime)) {
     nextSlotTime = moment.tz(startTime, "Asia/Kolkata").utc();
   } else {
     nextSlotTime.add(
@@ -781,14 +781,24 @@ const instantMeetingAvaibillity = asyncHandler( async (req, res, next) => {
     millisecond: 0,
   });
 
+   // Define the start and end times for the given date
+   const startTime = moment.tz("Asia/Kolkata")
+   .set({ hour: START_TIME, minute: 0, second: 0, millisecond: 0 })
+   .utc()
+   .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
+
+ const endTime = moment.tz("Asia/Kolkata")
+   .set({ hour: END_TIME, minute: 0, second: 0, millisecond: 0 })
+   .utc()
+   .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
+
+
    // If current start time is less than START_TIME, set the start time to 10:00 AM
-   if (nextSlotStartTime.hour() < START_TIME) {
+   if (nextSlotStartTime.isBefore(startTime)) {
     return next(
       new ErrorHandler(`Meeting time is between ${START_TIME} to ${END_TIME}`, 400)
     )
    } 
-
-  
 
   nextSlotStartTime.add(TIME_SLOT - (nextSlotStartTime.minute() % TIME_SLOT), "minutes");
 
@@ -823,17 +833,6 @@ const instantMeetingAvaibillity = asyncHandler( async (req, res, next) => {
   } else {
     availablePerson = salePersons;
   }
-
-  // Define the start and end times for the given date
-  const startTime = moment.tz("Asia/Kolkata")
-    .set({ hour: START_TIME, minute: 0, second: 0, millisecond: 0 })
-    .utc()
-    .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
-
-  const endTime = moment.tz("Asia/Kolkata")
-    .set({ hour: END_TIME, minute: 0, second: 0, millisecond: 0 })
-    .utc()
-    .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
 
   meetings = await MeetingModel.findAll({
     where: {
