@@ -212,6 +212,8 @@ const createMeetingBySalePerson = asyncHandler(async (req, res, next) => {
 
   const meetingCreated = await MeetingModel.findByPk(meeting.id)
 
+  console.log(meetingCreated)
+
   if(!meetingCreated){
     return next(
       new ErrorHandler("Something Went Wrong while creating a meeting", 500)
@@ -220,125 +222,119 @@ const createMeetingBySalePerson = asyncHandler(async (req, res, next) => {
 
   return res.status(201).json({
     success: true,
-    message: "Meeting seduled successfully",
+    message: "Meeting scheduled successfully",
     data: meetingCreated,
   });
 
 })
 
 // Update meeting by salePerson
-const updateMeeting = async (req, res, next) => {
-  try {
+const updateMeeting = asyncHandler(async (req, res, next) => {
 
-    if (!req.params.id) {
-      return next(
-        new ErrorHandler("missing meeting id", 400)
-      );
-    }
-
-    let meeting = await MeetingModel.findByPk(req.params.id);
-
-    if (!meeting) {
-      return next(
-        new ErrorHandler("Meeting not found", 404)
-      );
-    }
-
-    if (meeting.salePersonId && meeting.salePersonId !== req.user.id) {
-      return next(
-        new ErrorHandler("You are not authorized person for this resource", 403)
-      );
-    }
-
-    if (!meeting.salePersonId) {
-      const isMeetingAvailable = await MeetingModel.findOne({
-        where: {
-          seduledDate: meeting.seduledDate,
-          start: meeting.start,
-          end: meeting.end,
-          salePersonId: req.user.id,
-        },
-      });
-
-      if (isMeetingAvailable) {
-        return next(
-          new ErrorHandler(`You have already a meeting on that time`, 400)
-        );
-      }
-    }
-
-    if (req.body.seduledDate && (!req.body.start || !req.body.end)) {
-      return next(
-        new ErrorHandler("missing start and end time", 400)
-      );
-    }
-
-    if (req.body.seduledDate) {
-      if (!isDateGreterThanToday(req.body.seduledDate)) {
-        return next(
-          new ErrorHandler("Seduled date not less than today's date", 400)
-        );
-      }
-
-      req.body.seduledDate = moment.tz(req.body.seduledDate, "Asia/Kolkata")
-        .utc()
-        .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
-    }
-
-    if (req.body.start) {
-      if (!isValidStartTime(req.body.start)) {
-        return next(
-          new ErrorHandler(
-            "Startime of meeting should be greater than current time",
-            400
-          )
-        );
-      }
-      req.body.start = moment.tz(req.body.start, "Asia/Kolkata")
-        .utc()
-        .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
-    }
-
-    if (req.body.end) {
-      if (!isValidEndTime(req.body.start, req.body.end)) {
-        return next(
-          new ErrorHandler(
-            "endTime of meeting should not be less than startTime of meeting",
-            400
-          )
-        );
-      }
-      req.body.end = moment.tz(req.body.end, "Asia/Kolkata")
-        .utc()
-        .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
-    }
-
-    const [, updateMeeting] = await MeetingModel.update(
-      {
-        ...req.body,
-        salePersonId: req.user.id,
-        status: "confirmed",
-      },
-      {
-        where: {
-          id: req.params.id,
-        },
-        returning: true, // This option ensures that the updated data is returned
-        plain: true, // This option ensures that the returned data is a plain object
-      }
-    );
-
-    return res.status(201).json({
-      success: true,
-      message: "Meeting Updated successfully",
-      data: updateMeeting,
-    });
-  } catch (error) {
+  if (!req.params.id) {
     return next(
-      new ErrorHandler(error.message, 500)
+      new ErrorHandler("missing meeting id", 400)
     );
   }
-};
+
+  let meeting = await MeetingModel.findByPk(req.params.id);
+
+  if (!meeting) {
+    return next(
+      new ErrorHandler("Meeting not found", 404)
+    );
+  }
+
+  if (meeting.salePersonId && meeting.salePersonId !== req.user.id) {
+    return next(
+      new ErrorHandler("You are not authorized person for this resource", 403)
+    );
+  }
+
+  if (req.body.seduledDate && (!req.body.start || !req.body.end)) {
+    return next(
+      new ErrorHandler("missing start and end time", 400)
+    );
+  }
+
+  if (req.body.seduledDate) {
+    if (!isDateGreterThanToday(req.body.seduledDate)) {
+      return next(
+        new ErrorHandler("Seduled date not less than today's date", 400)
+      );
+    }
+
+    req.body.seduledDate = moment.tz(req.body.seduledDate, "Asia/Kolkata")
+      .utc()
+      .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
+  }
+
+  if (req.body.start) {
+    if (!isValidStartTime(req.body.start)) {
+      return next(
+        new ErrorHandler(
+          "Startime of meeting should be greater than current time",
+          400
+        )
+      );
+    }
+    req.body.start = moment.tz(req.body.start, "Asia/Kolkata")
+      .utc()
+      .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
+  }
+
+  if (req.body.end) {
+    if (!isValidEndTime(req.body.start, req.body.end)) {
+      return next(
+        new ErrorHandler(
+          "endTime of meeting should not be less than startTime of meeting",
+          400
+        )
+      );
+    }
+    req.body.end = moment.tz(req.body.end, "Asia/Kolkata")
+      .utc()
+      .format("YYYY-MM-DDTHH:mm:ss.SSS[Z]");
+  }
+
+  if (!meeting.salePersonId) {
+    const isMeetingAvailable = await MeetingModel.findOne({
+      where: {
+        seduledDate: req.body?.seduledDate ? req.body?.seduledDate : meeting.seduledDate,
+        start: req.body?.start ?  req.body?.start : meeting.start,
+        end: req.body?.end ?req.body?.end :  meeting.end,
+        salePersonId: req.user.id,
+      },
+    });
+
+    if (isMeetingAvailable) {
+      return next(
+        new ErrorHandler(`You have already a meeting on that time`, 400)
+      );
+    }
+  }
+
+  const [, updateMeeting] = await MeetingModel.update(
+    {
+      ...req.body,
+      salePersonId: req.user.id,
+      status: "confirmed",
+    },
+    {
+      where: {
+        id: req.params.id,
+      },
+      returning: true, // This option ensures that the updated data is returned
+      plain: true, // This option ensures that the returned data is a plain object
+    }
+  );
+
+  return res.status(201).json({
+    success: true,
+    message: "Meeting Updated successfully",
+    data: updateMeeting,
+  });
+})
 
 // get available slot of salePerson
 const availableSlotsForSalePerson = asyncHandler(async (req, res, next) => {
