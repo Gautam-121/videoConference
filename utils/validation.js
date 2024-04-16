@@ -11,6 +11,8 @@ const isValidPhone = (phone) => validator.isMobilePhone(phone, "en-IN");
 
 const isValidPassword = (password) => PASSWORD_REGEX.test(password)
 
+const isValiLength = name => name.length >= 4 && name.length<=30
+
 const isDateGreterThanToday = date => moment(date).isSameOrAfter(today, "day");
 
 const isValidStartTime = startTime => moment(startTime).isSameOrAfter(today);
@@ -23,7 +25,8 @@ module.exports = {
   isDateGreterThanToday,
   isValidStartTime,
   isValidEndTime,
-  isValidPassword
+  isValidPassword,
+  isValiLength
 };
 
 

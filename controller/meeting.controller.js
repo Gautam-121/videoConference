@@ -7,6 +7,7 @@ const {
   isValidEndTime,
   isValidPhone,
   isValidStartTime,
+  isValiLength,
 } = require("../utils/validation");
 const moment = require("moment-timezone");
 const SalesUserModel = require("../models/saleUser.model");
@@ -23,25 +24,47 @@ const meetingCreate = asyncHandler(async (req, res, next) => {
     [name, email, phone, seduledDate, start, end, organizationId].some((field) => field?.trim() == "")
   ) {
     return next(
-      new ErrorHandler("Provide all neccessary field", 400)
+      new ErrorHandler(
+        "Provide all neccessary field", 
+        400
+      )
     )
   }
 
+
   if (!isValidEmail(email)) {
     return next(
-      new ErrorHandler("Invalid Email id", 400)
+      new ErrorHandler(
+        "Invalid Email id", 
+        400
+      )
     );
   }
 
   if (!isValidPhone(phone)) {
     return next(
-      new ErrorHandler("Invalid Phone Number", 400)
+      new ErrorHandler(
+        "Invalid Phone Number", 
+        400
+      )
     );
+  }
+
+  if(!isValiLength(name)){
+    return next(
+      new ErrorHandler(
+          "name should be greater than 3 character and less than 30 character" ,
+          400
+      ) 
+    ) 
   }
 
   if (!isDateGreterThanToday(seduledDate)) {
     return next(
-      new ErrorHandler("Seduled date not less than today's date", 400)
+      new ErrorHandler(
+        "Scheduled date not less than today's date", 
+        400
+      )
     );
   }
 
@@ -75,7 +98,7 @@ const meetingCreate = asyncHandler(async (req, res, next) => {
   if (isMeetingExist) {
     return next(
       new ErrorHandler(
-        `You have already send a video call Request on ${seduledDate} , Please select another day for seduling video call meeting`,
+        `You have already send a video call Request on ${seduledDate} , Please select another day for scheduling video call meeting`,
         400
       )
     );
@@ -138,19 +161,37 @@ const createMeetingBySalePerson = asyncHandler(async (req, res, next) => {
 
   if (!isValidEmail(email)) {
     return next(
-      new ErrorHandler("Invalid Email id", 400)
+      new ErrorHandler(
+        "Invalid Email id", 
+        400
+      )
     );
   }
 
   if (!isValidPhone(phone)) {
     return next(
-      new ErrorHandler("Invalid Phone Number", 400)
+      new ErrorHandler(
+        "Invalid Phone Number", 
+        400
+      )
     );
+  }
+
+  if(!isValiLength(name)){
+    return next(
+      new ErrorHandler(
+          "name should be greater than 3 character and less than 30 character" ,
+          400
+      ) 
+    ) 
   }
 
   if (!isDateGreterThanToday(seduledDate)) {
     return next(
-      new ErrorHandler("Seduled date not less than today's date", 400)
+      new ErrorHandler(
+        "scheduled date not less than today's date", 
+        400
+      )
     );
   }
 
@@ -184,7 +225,7 @@ const createMeetingBySalePerson = asyncHandler(async (req, res, next) => {
   if (isMeetingExisted) {
     return next(
       new ErrorHandler(
-        `You have already send a video call Request on ${seduledDate} , for ${email} , Please select another day for seduling video call meeting`,
+        `You have already send a video call Request on ${seduledDate} , for ${email} , Please select another day for scheduling video call meeting`,
         400
       )
     );
@@ -212,11 +253,12 @@ const createMeetingBySalePerson = asyncHandler(async (req, res, next) => {
 
   const meetingCreated = await MeetingModel.findByPk(meeting.id)
 
-  console.log(meetingCreated)
-
   if(!meetingCreated){
     return next(
-      new ErrorHandler("Something Went Wrong while creating a meeting", 500)
+      new ErrorHandler(
+        "Something Went Wrong while creating a meeting",
+         500
+      )
     )
   }
 
@@ -233,7 +275,10 @@ const updateMeeting = asyncHandler(async (req, res, next) => {
 
   if (!req.params.id) {
     return next(
-      new ErrorHandler("missing meeting id", 400)
+      new ErrorHandler(
+        "missing meeting id", 
+        400
+      )
     );
   }
 
@@ -241,26 +286,38 @@ const updateMeeting = asyncHandler(async (req, res, next) => {
 
   if (!meeting) {
     return next(
-      new ErrorHandler("Meeting not found", 404)
+      new ErrorHandler(
+        "Meeting not found", 
+        404
+      )
     );
   }
 
   if (meeting.salePersonId && meeting.salePersonId !== req.user.id) {
     return next(
-      new ErrorHandler("You are not authorized person for this resource", 403)
+      new ErrorHandler(
+        "You are not authorized person for this resource", 
+        403
+      )
     );
   }
 
   if (req.body.seduledDate && (!req.body.start || !req.body.end)) {
     return next(
-      new ErrorHandler("missing start and end time", 400)
+      new ErrorHandler(
+        "missing start and end time", 
+        400
+      )
     );
   }
 
   if (req.body.seduledDate) {
     if (!isDateGreterThanToday(req.body.seduledDate)) {
       return next(
-        new ErrorHandler("Seduled date not less than today's date", 400)
+        new ErrorHandler(
+          "scheduled date not less than today's date", 
+          400
+        )
       );
     }
 
@@ -309,7 +366,10 @@ const updateMeeting = asyncHandler(async (req, res, next) => {
 
     if (isMeetingAvailable) {
       return next(
-        new ErrorHandler(`You have already a meeting on that time`, 400)
+        new ErrorHandler(
+          `You have already a meeting on that time`, 
+          400
+        )
       );
     }
   }
@@ -338,16 +398,25 @@ const updateMeeting = asyncHandler(async (req, res, next) => {
 
 // get available slot of salePerson
 const availableSlotsForSalePerson = asyncHandler(async (req, res, next) => {
+
   // Get the date from the request parameters
   const date = req.params.date;
 
   if (!date) {
-    return next(new ErrorHandler("Date is missing", 400));
+    return next(
+      new ErrorHandler(
+        "Date is missing", 
+        400
+      )
+    );
   }
 
   if (!isDateGreterThanToday(date)) {
     return next(
-      new ErrorHandler("Seduled date not less than today's date", 400)
+      new ErrorHandler(
+        "scheduled date not less than today's date",
+        400
+      )
     );
   }
 
@@ -448,6 +517,10 @@ const getMeetingRequest = asyncHandler(async (req, res, next) => {
 
   let uniqueMeetings = Array.from(uniqueStartTimes.values());
 
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
   return res.status(200).json({
     success: true,
     message: "Data fetch Successfully",
@@ -533,7 +606,10 @@ const getSingleMeetingById = asyncHandler(async (req, res, next) => {
 
   if (!req.params.id) {
     return next(
-      new ErrorHandler("Missing Meeting id", 400)
+      new ErrorHandler(
+        "Missing Meeting id", 
+        400
+      )
     );
   }
 
@@ -546,7 +622,10 @@ const getSingleMeetingById = asyncHandler(async (req, res, next) => {
 
   if (!meeting) {
     return next(
-      new ErrorHandler("Meeting not found", 400)
+      new ErrorHandler(
+        "Meeting not found", 
+        400
+      )
     );
   }
 
@@ -562,7 +641,10 @@ const deleteMeetingById = asyncHandler(async (req, res) => {
 
   if (!req.params.id) {
     return next(
-      new ErrorHandler("Missing Meeting Id", 400)
+      new ErrorHandler(
+        "Missing Meeting Id",
+         400
+      )
     );
   }
 
@@ -598,19 +680,28 @@ const availableSlotForCustomerRequest = asyncHandler(async (req, res, next) => {
 
   if (!date) {
     return next(
-      new ErrorHandler("Date is missing", 400)
+      new ErrorHandler(
+        "Date is missing", 
+        400
+      )
     );
   }
 
   if (!organizationId) {
     return next(
-      new ErrorHandler("OrganizationId is missing", 400)
+      new ErrorHandler(
+        "OrganizationId is missing", 
+        400
+      )
     );
   }
 
   if (!isDateGreterThanToday(date)) {
     return next(
-      new ErrorHandler("Seduled date not less than today's date", 400)
+      new ErrorHandler(
+        "Scheduled date not less than today's date",
+        400
+      )
     );
   }
 
@@ -646,7 +737,10 @@ const availableSlotForCustomerRequest = asyncHandler(async (req, res, next) => {
 
   if (salePersons.length == 0) {
     return next(
-      new ErrorHandler("No salePerson Register with OrganizationId", 400)
+      new ErrorHandler(
+        "No salePerson Register with OrganizationId",
+         400
+      )
     );
   }
 
@@ -729,7 +823,10 @@ const instantMeetingAvaibillity = asyncHandler( async (req, res, next) => {
 
   if (!req.params.organizationId) {
     return next(
-      new ErrorHandler("OrganizationId is Missing", 400)
+      new ErrorHandler(
+        "OrganizationId is Missing",
+        400
+      )
     );
   }
 
@@ -738,7 +835,39 @@ const instantMeetingAvaibillity = asyncHandler( async (req, res, next) => {
       (field) => field?.trim() == ""
     )
   ) {
-    return next(new ErrorHandler("Please provide all necessary fields", 400));
+    return next(
+      new ErrorHandler(
+        "Please provide all necessary fields", 
+        400
+      )
+    );
+  }
+
+  if (!isValidEmail(email)) {
+    return next(
+      new ErrorHandler(
+        "Invalid Email id", 
+        400
+      )
+    );
+  }
+
+  if (!isValidPhone(phone)) {
+    return next(
+      new ErrorHandler(
+        "Invalid Phone Number", 
+        400
+      )
+    );
+  }
+
+  if(!isValiLength(name)){
+    return next(
+      new ErrorHandler(
+          "name should be greater than 3 character and less than 30 character" ,
+          400
+      ) 
+    ) 
   }
 
   const salePersons = await SalesUserModel.findAll({
@@ -749,7 +878,10 @@ const instantMeetingAvaibillity = asyncHandler( async (req, res, next) => {
 
   if (salePersons.length == 0) {
     return next(
-      new ErrorHandler("No one Register in this OrganizationId", 400)
+      new ErrorHandler(
+        "No one Register in this OrganizationId", 
+        400
+      )
     );
   }
 
@@ -763,7 +895,7 @@ const instantMeetingAvaibillity = asyncHandler( async (req, res, next) => {
   if (currentTime >= thresholdTime) {
     return next(
       new ErrorHandler(
-        "All slots for today have been filled. Please select the next available day to schedule a meeting.",
+        "All slots for today have been filled. Please select the next available day to scheduled a meeting.",
         400
       )
     );
@@ -792,7 +924,10 @@ const instantMeetingAvaibillity = asyncHandler( async (req, res, next) => {
    // If current start time is less than START_TIME, set the start time to 10:00 AM
    if (nextSlotStartTime.isBefore(startTime)) {
     return next(
-      new ErrorHandler(`Meeting time is between ${START_TIME} to ${END_TIME}`, 400)
+      new ErrorHandler(
+        `Meeting time is between ${START_TIME} to ${END_TIME}`, 
+        400
+      )
     )
    } 
 
@@ -812,7 +947,7 @@ const instantMeetingAvaibillity = asyncHandler( async (req, res, next) => {
   if (meetings.length === salePersons.length) {
     return next(
       new ErrorHandler(
-        "All salespersons are currently engaged in other meetings. Please try again later or schedule your meeting for another time.",
+        "All salespersons are currently engaged in other meetings. Please try again later or scheduled your meeting for another time.",
         400
       )
     );

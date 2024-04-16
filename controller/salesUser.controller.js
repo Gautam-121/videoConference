@@ -1,7 +1,10 @@
 const ErrorHandler = require("../utils/errorHandler");
 const SalesUserModel = require("../models/saleUser.model")
-const {isValidEmail,isValidPhone ,isValidPassword} = require("../utils/validation");
+const {isValidEmail,isValidPhone ,isValidPassword, isValiLength} = require("../utils/validation");
 const asyncHandler = require("../utils/asyncHandler");
+const sendEmail = require("../utils/sendEmail.js")
+const jwt = require("jsonwebtoken")
+
 
 const registerSale = asyncHandler(async (req, res, next) => {
 
@@ -20,12 +23,21 @@ const registerSale = asyncHandler(async (req, res, next) => {
 
     // check email is valid
     if (!isValidEmail(email)) {
-        return next(new ErrorHandler("Invalid Email id", 400))
+        return next(
+            new ErrorHandler(
+                "Invalid Email id", 
+                400
+            )
+        )
     }
 
     // check phone is valid
     if (!isValidPhone(phone)) {
-        return next(new ErrorHandler("Invalid Phone Number", 400))
+        return next(new ErrorHandler(
+            "Invalid Phone Number", 
+            400
+            )
+        )
     }
 
     // check password matches the regex
@@ -38,9 +50,18 @@ const registerSale = asyncHandler(async (req, res, next) => {
         ) 
     }
 
+    if(!isValiLength(name)){
+        return next(
+            new ErrorHandler(
+                "name should be greater than 3 character and less than 30 character" ,
+                400
+            ) 
+        ) 
+    }
+
     const isExistedSales = await SalesUserModel.findOne({
         where:{
-            email,
+            email:email.trim(),
             organizationId
         }
     })
@@ -69,8 +90,10 @@ const registerSale = asyncHandler(async (req, res, next) => {
     })
 
     if(!createdUser){
-        return next(new ErrorHandler(
-            "Something went wrong while registering the Sale Person", 500
+        return next(
+            new ErrorHandler(
+                "Something went wrong while registering the Sale Person", 
+                500
             )
         )
     }
@@ -95,16 +118,28 @@ const loginSale = asyncHandler(async (req , res , next)=>{
         );
     }
 
-    const user = await SalesUserModel.findOne({ where: { email } });
+    const user = await SalesUserModel.findOne({
+      where: { email: email.trim() },
+    });
 
     if(!user){
-        return next(new ErrorHandler("Invalid email or password", 401))
+        return next(
+            new ErrorHandler(
+                "Invalid email or password", 
+                401
+            )
+        )
     }
 
     const isPasswordMatched = await user.comparePassword(password);
 
     if (!isPasswordMatched) {
-        return next(new ErrorHandler("Invalid email or password", 401));
+        return next(
+            new ErrorHandler(
+                "Invalid email or password",
+                 401
+            )
+        );
     }
 
     const accessToken = await user.generateAccessToken()
@@ -123,8 +158,126 @@ const loginSale = asyncHandler(async (req , res , next)=>{
     
 })
 
+const forgotPassword = asyncHandler(async(req,res,next)=>{
+
+    const { email } = req.body
+
+    if(!email){
+        return next(
+            new ErrorHandler(
+                "Email is missing",
+                400
+            )
+        )
+    }
+
+    const user = await SalesUserModel.findOne({
+        where:{
+            email: email.trim()
+        }
+    })
+
+    if(!user){
+        return next(
+            new ErrorHandler(
+                "Sale Person not found",
+                404
+            )
+        )
+    }
+
+    const token = user.generateForgotPasswordToken()
+    const resetPasswordUrl = `${req.protocol}://${req.get(
+        "host")}/api/v1/user/password/reset/${user.id}/${token}`
+    
+    const message = `Your password reset token is :- \n\n ${resetPasswordUrl} \n\nIf you have not requested this email then, please ignore it.`;
+
+    try {
+        await sendEmail({
+            email: user.email,
+            subject: "Password reovery",
+            message
+        })
+    } catch (error) {
+        return next(
+            new ErrorHandler(
+                "Something went wrong while sending a email",
+                500
+            )
+        )
+    }
+
+})
+
+const resetPassword = asyncHandler(async(req,res,next)=>{
+
+    const { token } = req.params
+    const { password } = req.body
+
+    if(!token){
+        return next(
+            new ErrorHandler(
+                "Unauthorized request",
+                401
+            )
+        )
+    }
+
+    const decodedToken = jwt.verify(token , process.env.JWT_FORGOT_SECRET)
+
+    if(!decodedToken){
+        return next(
+            new ErrorHandler(
+                "Invalid token or token is expired"
+            )
+        )
+    }
+    
+    const user = await SalesUserModel.findByPk(decodedToken.id)
+
+    if(!user){
+        return next(
+            new ErrorHandler(
+                "Invalid token or token is expired"
+            )
+        )
+    }
+
+    if(!password){
+        return next(
+            new ErrorHandler(
+                "Password is missing",
+                400
+            )
+        )
+    }
+
+    user.password = password
+    const accessToken = await user.generateAccessToken()
+
+    await user.save({validate: false})
+
+    const loggedInUser = await SalesUserModel.findByPk(user.id , {
+        attributes:{
+            exclude: ["password"]
+        }
+    })
+    
+    return res.status(200).json({
+        success: true,
+        data:loggedInUser,
+        token: accessToken,
+      });
+     
+})
 
 
 
 
-module.exports = {registerSale , loginSale }
+
+module.exports = { 
+    registerSale, 
+    loginSale,
+    forgotPassword,
+    resetPassword
+ };

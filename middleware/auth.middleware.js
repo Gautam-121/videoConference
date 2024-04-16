@@ -21,19 +21,35 @@ const isAuthenticatedUser = async (req, res, next) => {
         new ErrorHandler("Please Login to access this resource", 401)
       );
     }
-    
-    jwt.verify(token, process.env.JWT_SECRET, async (err, decodedToken) => {
-      if (err) { 
-        let message = (err.message = "jwt expiry"
-          ? "token is expired , please login again"
-          : "invalid token");
-        return next(new ErrorHandler(message, 401));
-      }
-      req.user = await SalesUserModel.findByPk(decodedToken.id);
-      next();
-    });
+
+    const decodedToken = jwt.verify(token , process.env.JWT_SECRET)
+
+    if(!decodedToken){
+      return next(
+        new ErrorHandler(
+          "Invalid token or token is expired",
+          401
+        )
+      )
+    }
+
+    const user = await SalesUserModel.findByPk(decodedToken.id);
+
+    if(!user){
+      return next(
+        new ErrorHandler(
+          "Invalid token or token is expired",
+          401
+        )
+      )
+    }
   } catch (error) {
-    return next(new ErrorHandler(error.message, 500));
+    return next(
+      new ErrorHandler(
+        error?.message || "Invalid access token",
+        401
+      )
+    )
   }
 };
 
